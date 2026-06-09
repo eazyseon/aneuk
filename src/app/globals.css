@@ -1,23 +1,92 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #f4efe6;
-  --foreground: #1f1c19;
   --panel: rgba(255, 252, 246, 0.82);
   --panel-strong: #fffaf2;
   --line: rgba(79, 59, 41, 0.12);
-  --muted: #70614f;
-  --accent: #b66a3c;
+  --muted: #efe6d9;
+  --muted-foreground: #70614f;
+  --accent: #f5eadc;
+  --accent-foreground: #1f1c19;
   --accent-soft: rgba(182, 106, 60, 0.14);
   --shadow: 0 24px 60px rgba(89, 63, 42, 0.12);
   --font-sans: "Avenir Next", "Pretendard", "Segoe UI", sans-serif;
   --font-serif: "Iowan Old Style", "Palatino Linotype", "Noto Serif KR", serif;
+  --background: #f4efe6;
+  --foreground: #1f1c19;
+  --card: #fffaf2;
+  --card-foreground: #1f1c19;
+  --popover: #fffaf2;
+  --popover-foreground: #1f1c19;
+  --primary: #2c241e;
+  --primary-foreground: #fff9f2;
+  --secondary: #f8f1e7;
+  --secondary-foreground: #1f1c19;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: rgba(79, 59, 41, 0.12);
+  --input: rgba(79, 59, 41, 0.18);
+  --ring: rgba(182, 106, 60, 0.28);
+  --chart-1: #c98962;
+  --chart-2: #8d5b3a;
+  --chart-3: #6f6558;
+  --chart-4: #c7b39a;
+  --chart-5: #41342b;
+  --radius: 0.625rem;
+  --sidebar: #fffaf2;
+  --sidebar-foreground: #1f1c19;
+  --sidebar-primary: #2c241e;
+  --sidebar-primary-foreground: #fff9f2;
+  --sidebar-accent: #f5eadc;
+  --sidebar-accent-foreground: #1f1c19;
+  --sidebar-border: rgba(79, 59, 41, 0.12);
+  --sidebar-ring: rgba(182, 106, 60, 0.28);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
+  --font-heading: var(--font-serif);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 * {
@@ -31,7 +100,6 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
-  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   background-image:
@@ -85,7 +153,7 @@ main {
 }
 
 .aneuk-eyebrow {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -101,7 +169,7 @@ main {
 
 .aneuk-copy {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   line-height: 1.7;
 }
 
@@ -181,7 +249,7 @@ main {
 
 .aneuk-card p {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   line-height: 1.7;
 }
 
@@ -224,7 +292,7 @@ main {
 
 .aneuk-meta {
   margin-top: 6px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.92rem;
 }
 
@@ -243,7 +311,7 @@ main {
 
 .aneuk-kpi span {
   display: block;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.78rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -270,7 +338,7 @@ main {
 }
 
 .aneuk-table th {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-weight: 600;
 }
 
@@ -302,7 +370,7 @@ main {
 
 .aneuk-field label {
   font-size: 0.94rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 .aneuk-input,
@@ -323,7 +391,7 @@ main {
 
 .aneuk-caption {
   font-size: 0.9rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 @media (max-width: 900px) {
@@ -345,5 +413,51 @@ main {
   .aneuk-nav,
   .aneuk-content {
     padding-inline: 16px;
+  }
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
