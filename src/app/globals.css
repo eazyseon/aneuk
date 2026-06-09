@@ -1,26 +1,349 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4efe6;
+  --foreground: #1f1c19;
+  --panel: rgba(255, 252, 246, 0.82);
+  --panel-strong: #fffaf2;
+  --line: rgba(79, 59, 41, 0.12);
+  --muted: #70614f;
+  --accent: #b66a3c;
+  --accent-soft: rgba(182, 106, 60, 0.14);
+  --shadow: 0 24px 60px rgba(89, 63, 42, 0.12);
+  --font-sans: "Avenir Next", "Pretendard", "Segoe UI", sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", "Noto Serif KR", serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
+  min-height: 100vh;
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background-image:
+    radial-gradient(circle at top left, rgba(224, 186, 154, 0.45), transparent 30%),
+    radial-gradient(circle at 85% 20%, rgba(217, 207, 188, 0.7), transparent 28%),
+    linear-gradient(180deg, #f8f3ea 0%, #f4efe6 42%, #efe8dc 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+main {
+  width: 100%;
+}
+
+::selection {
+  background: rgba(182, 106, 60, 0.22);
+}
+
+.aneuk-shell {
+  min-height: 100vh;
+  padding: 32px 20px 56px;
+}
+
+.aneuk-frame {
+  margin: 0 auto;
+  max-width: 1120px;
+  border: 1px solid var(--line);
+  border-radius: 32px;
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.92), rgba(255, 249, 240, 0.76));
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  backdrop-filter: blur(18px);
+}
+
+.aneuk-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.aneuk-brand {
+  display: grid;
+  gap: 2px;
+}
+
+.aneuk-eyebrow {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.aneuk-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 4vw, 4.75rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+
+.aneuk-copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.aneuk-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.aneuk-link,
+.aneuk-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  padding: 11px 18px;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.aneuk-link:hover,
+.aneuk-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(92, 65, 43, 0.24);
+}
+
+.aneuk-button {
+  background: var(--foreground);
+  color: #fff9f2;
+  border-color: transparent;
+}
+
+.aneuk-link {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.aneuk-content {
+  padding: 28px 24px 36px;
+}
+
+.aneuk-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.aneuk-grid-hero {
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+  align-items: stretch;
+}
+
+.aneuk-card {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 28px;
+  padding: 22px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.aneuk-card h2,
+.aneuk-card h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  letter-spacing: -0.03em;
+}
+
+.aneuk-card h2 {
+  font-size: clamp(1.8rem, 2.6vw, 3rem);
+  line-height: 1.05;
+}
+
+.aneuk-card h3 {
+  font-size: 1.3rem;
+}
+
+.aneuk-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.aneuk-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.aneuk-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: var(--accent-soft);
+  color: #8c4e28;
+  font-size: 0.85rem;
+}
+
+.aneuk-list {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.aneuk-item {
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  padding: 16px 18px;
+}
+
+.aneuk-item strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.aneuk-meta {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.aneuk-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.aneuk-kpi {
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--line);
+}
+
+.aneuk-kpi span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.aneuk-kpi strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.35rem;
+  font-family: var(--font-serif);
+}
+
+.aneuk-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+}
+
+.aneuk-table th,
+.aneuk-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.aneuk-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.aneuk-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: #8c4e28;
+  padding: 6px 10px;
+  font-size: 0.86rem;
+}
+
+.aneuk-form {
+  display: grid;
+  gap: 14px;
+}
+
+.aneuk-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.aneuk-field {
+  display: grid;
+  gap: 8px;
+}
+
+.aneuk-field label {
+  font-size: 0.94rem;
+  color: var(--muted);
+}
+
+.aneuk-input,
+.aneuk-textarea {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.68);
+  padding: 12px 14px;
+  color: var(--foreground);
+  font: inherit;
+}
+
+.aneuk-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.aneuk-caption {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .aneuk-grid-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .aneuk-kpis,
+  .aneuk-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .aneuk-shell {
+    padding: 16px 12px 28px;
+  }
+
+  .aneuk-nav,
+  .aneuk-content {
+    padding-inline: 16px;
+  }
 }
