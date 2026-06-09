@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +33,15 @@ const steps = [
   },
 ];
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{
+    error?: string;
+  }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const { error } = await searchParams;
+
   return (
     <div className="aneuk-shell">
       <main className="aneuk-frame">
@@ -55,14 +64,18 @@ export default function LoginPage() {
             <CardContent className="space-y-5">
               <div className="rounded-[22px] border border-border/70 bg-white/45 p-5">
                 <p className="text-sm leading-6 text-muted-foreground">
-                  실제 구현에서는 이 버튼이 Google 인증을 시작하고, 성공 후
-                  `/rooms`로 이동합니다.
+                  실제 구현에서는 이 버튼이 Google 인증을 시작하고, 성공 후 `/rooms`
+                  로 이동합니다.
                 </p>
               </div>
+              {error ? (
+                <div className="rounded-[20px] border border-destructive/25 bg-destructive/8 p-4 text-sm leading-6 text-destructive">
+                  OAuth 콜백 처리에 실패했습니다. `Supabase Dashboard`의 Google Provider
+                  설정과 Redirect URL을 다시 확인해 주세요.
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-2">
-                <Button asChild className="rounded-full px-4">
-                  <Link href="/rooms">Google로 계속하기</Link>
-                </Button>
+                <GoogleSignInButton />
                 <Button asChild className="rounded-full px-4" variant="outline">
                   <Link href="/">홈으로</Link>
                 </Button>
