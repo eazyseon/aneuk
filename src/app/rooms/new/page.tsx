@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { requireUser } from "@/lib/auth/guards";
 
 export const metadata = {
   title: "새 기록",
@@ -35,7 +37,9 @@ const principles = [
 const surfaceClassName =
   "rounded-[28px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,252,246,0.95),rgba(255,249,240,0.82))] shadow-[var(--shadow)] backdrop-blur-sm";
 
-export default function NewRoomPage() {
+export default async function NewRoomPage() {
+  await requireUser("/rooms/new");
+
   return (
     <div className="aneuk-shell">
       <main className="aneuk-frame">
@@ -44,9 +48,12 @@ export default function NewRoomPage() {
             <span className="aneuk-eyebrow">new room record</span>
             <strong>아늑</strong>
           </div>
-          <Button asChild className="rounded-full px-4" variant="outline">
-            <Link href="/rooms">목록으로</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild className="rounded-full px-4" variant="outline">
+              <Link href="/rooms">목록으로</Link>
+            </Button>
+            <SignOutButton />
+          </div>
         </nav>
 
         <section className="aneuk-content grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">

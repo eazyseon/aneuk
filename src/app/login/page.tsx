@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { redirectIfAuthenticated } from "@/lib/auth/guards";
 
 export const metadata = {
   title: "로그인",
@@ -36,11 +37,15 @@ const steps = [
 type LoginPageProps = {
   searchParams: Promise<{
     error?: string;
+    next?: string;
   }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
+  const nextPath = next?.startsWith("/") ? next : "/rooms";
+
+  await redirectIfAuthenticated(nextPath);
 
   return (
     <div className="aneuk-shell">
@@ -49,15 +54,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <Card className={surfaceClassName}>
             <CardHeader className="gap-5">
               <Badge className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[#8c4e28]">
-                Google OAuth placeholder
+                Google OAuth
               </Badge>
               <div className="space-y-4">
                 <CardTitle className="font-serif text-4xl leading-[0.98] tracking-[-0.04em] md:text-6xl">
                   로그인 후 내 방 기록만 조용히 모아볼게요.
                 </CardTitle>
                 <CardDescription className="max-w-xl text-base leading-7 text-muted-foreground md:text-[1.05rem]">
-                  이 페이지는 이후 Supabase Google OAuth를 연결할 자리입니다.
-                  지금은 버튼, 안내 문구, 보호 라우트 흐름만 먼저 고정해 둡니다.
+                  Google 로그인 후 내 기록 목록으로 돌아오고, 보호 페이지에 직접
+                  진입했을 때도 원래 가려던 화면으로 복귀하도록 연결했습니다.
                 </CardDescription>
               </div>
             </CardHeader>
@@ -75,7 +80,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2">
-                <GoogleSignInButton />
+                <GoogleSignInButton nextPath={nextPath} />
                 <Button asChild className="rounded-full px-4" variant="outline">
                   <Link href="/">홈으로</Link>
                 </Button>

@@ -1,49 +1,43 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
-type GoogleSignInButtonProps = {
-  nextPath?: string;
-};
-
-export function GoogleSignInButton({
-  nextPath = "/rooms",
-}: GoogleSignInButtonProps) {
+export function SignOutButton() {
+  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const handleSignIn = () => {
+  const handleSignOut = () => {
     startTransition(async () => {
       setErrorMessage(null);
 
       const supabase = createClient();
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo,
-        },
-      });
+      const { error } = await supabase.auth.signOut();
 
       if (error) {
-        setErrorMessage("Google 로그인 연결에 실패했습니다. Provider 설정을 확인해 주세요.");
+        setErrorMessage("로그아웃에 실패했습니다. 다시 시도해 주세요.");
+        return;
       }
+
+      router.push("/login");
+      router.refresh();
     });
   };
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-2">
       <Button
         className="rounded-full px-4"
         disabled={isPending}
-        onClick={handleSignIn}
+        onClick={handleSignOut}
         type="button"
+        variant="outline"
       >
-        {isPending ? "Google로 이동 중..." : "Google로 계속하기"}
+        {isPending ? "로그아웃 중..." : "로그아웃"}
       </Button>
       {errorMessage ? (
         <p className="text-sm leading-6 text-destructive">{errorMessage}</p>

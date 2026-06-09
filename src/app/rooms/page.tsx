@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { requireUser } from "@/lib/auth/guards";
 
 export const metadata = {
   title: "내 기록",
@@ -42,7 +44,9 @@ const records = [
 const surfaceClassName =
   "rounded-[28px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,252,246,0.95),rgba(255,249,240,0.82))] shadow-[var(--shadow)] backdrop-blur-sm";
 
-export default function RoomsPage() {
+export default async function RoomsPage() {
+  await requireUser("/rooms");
+
   return (
     <div className="aneuk-shell">
       <main className="aneuk-frame">
@@ -58,6 +62,7 @@ export default function RoomsPage() {
             <Button asChild className="rounded-full px-4">
               <Link href="/rooms/new">새 기록</Link>
             </Button>
+            <SignOutButton />
           </div>
         </nav>
 

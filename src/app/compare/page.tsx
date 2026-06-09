@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { requireUser } from "@/lib/auth/guards";
 
 export const metadata = {
   title: "비교",
@@ -53,7 +55,9 @@ function statusClassName(value: string) {
   return "border-border bg-secondary text-secondary-foreground";
 }
 
-export default function ComparePage() {
+export default async function ComparePage() {
+  await requireUser("/compare");
+
   return (
     <div className="aneuk-shell">
       <main className="aneuk-frame">
@@ -62,9 +66,12 @@ export default function ComparePage() {
             <span className="aneuk-eyebrow">comparison matrix</span>
             <strong>아늑</strong>
           </div>
-          <Button asChild className="rounded-full px-4" variant="outline">
-            <Link href="/rooms">목록으로</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild className="rounded-full px-4" variant="outline">
+              <Link href="/rooms">목록으로</Link>
+            </Button>
+            <SignOutButton />
+          </div>
         </nav>
 
         <section className="aneuk-content grid gap-5">
