@@ -1,0 +1,211 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { deleteRoomRecord, updateRoomRecord } from "@/app/rooms/[id]/actions";
+import { SignOutButton } from "@/components/auth/sign-out-button";
+import { DeleteRoomRecordButton } from "@/components/rooms/delete-room-record-button";
+import { RoomRecordFormFields } from "@/components/rooms/room-record-form-fields";
+import { SaveRoomRecordButton } from "@/components/rooms/save-room-record-button";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { requireUser } from "@/lib/auth/guards";
+import {
+  formatCondition,
+  formatCurrencyInManwon,
+  getRoomRecordById,
+  getRoomRecordName,
+} from "@/lib/room-records";
+import { getRoomRecordFormErrorMessage } from "@/lib/room-records-form";
+
+export const metadata = {
+  title: "기록 상세",
+};
+
+const surfaceClassName =
+  "rounded-[28px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,252,246,0.95),rgba(255,249,240,0.82))] shadow-[var(--shadow)] backdrop-blur-sm";
+
+type RoomDetailPageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+  searchParams: Promise<{
+    error?: string;
+    updated?: string;
+  }>;
+};
+
+export default async function RoomDetailPage({
+  params,
+  searchParams,
+}: RoomDetailPageProps) {
+  const { id } = await params;
+  const { error, updated } = await searchParams;
+  const user = await requireUser(`/rooms/${id}`);
+
+  let record = null;
+  let loadError = false;
+
+  try {
+    record = await getRoomRecordById(user.id, id);
+  } catch {
+    loadError = true;
+  }
+
+  if (!loadError && !record) {
+    notFound();
+  }
+
+  if (loadError || !record) {
+    return (
+      <div className="aneuk-shell">
+        <main className="aneuk-frame">
+          <section className="aneuk-content grid gap-5">
+            <Card className={surfaceClassName}>
+              <CardHeader className="gap-3">
+                <Badge className="rounded-full" variant="destructive">
+                  load error
+                </Badge>
+                <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
+                  기록을 불러오지 못했습니다
+                </CardTitle>
+                <CardDescription className="text-sm leading-6 text-muted-foreground">
+                  잠시 후 다시 시도하거나 목록으로 돌아가 주세요.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="rounded-full px-4">
+                  <Link href="/rooms">목록으로 돌아가기</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="aneuk-shell">
+      <main className="aneuk-frame">
+        <nav className="aneuk-nav">
+          <div className="aneuk-brand">
+            <span className="aneuk-eyebrow">room record detail</span>
+            <strong>아늑</strong>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild className="rounded-full px-4" variant="outline">
+              <Link href="/rooms">목록으로</Link>
+            </Button>
+            <Button asChild className="rounded-full px-4" variant="outline">
+              <Link href="/compare">비교 화면</Link>
+            </Button>
+            <SignOutButton />
+          </div>
+        </nav>
+
+        <section className="aneuk-content grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
+          <Card className={surfaceClassName}>
+            <CardHeader className="gap-4">
+              <Badge className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[#8c4e28]">
+                room record detail
+              </Badge>
+              <div className="space-y-3">
+                <CardTitle className="font-serif text-4xl leading-[0.98] tracking-[-0.04em] md:text-6xl">
+                  {getRoomRecordName(record)}
+                </CardTitle>
+                <CardDescription className="max-w-2xl text-base leading-7 text-muted-foreground md:text-[1.05rem]">
+                  저장된 기록을 다시 읽고 바로 수정하거나 삭제할 수 있습니다.
+                </CardDescription>
+              </div>
+            </CardHeader>
+
+            <CardContent>
+              <form action={updateRoomRecord} className="grid gap-5">
+                {updated === "1" ? (
+                  <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                    기록을 수정했습니다.
+                  </div>
+                ) : null}
+                {error ? (
+                  <div className="rounded-[20px] border border-destructive/25 bg-destructive/8 p-4 text-sm leading-6 text-destructive">
+                    {getRoomRecordFormErrorMessage(error)}
+                  </div>
+                ) : null}
+
+                <input name="recordId" type="hidden" value={record.id} />
+                <RoomRecordFormFields record={record} />
+
+                <div className="rounded-[20px] border border-border/70 bg-white/45 p-4 text-sm leading-6 text-muted-foreground">
+                  지도와 위치 수정 UI는 다음 단계에서 붙입니다. 지금은 저장된 주소와 좌표
+                  컬럼을 유지한 채 텍스트 기록을 먼저 안정화합니다.
+                </div>
+
+                <div className="flex flex-wrap justify-between gap-3">
+                  <Badge className="rounded-full" variant="outline">
+                    마지막 수정 {new Date(record.updated_at).toLocaleDateString("ko-KR")}
+                  </Badge>
+                  <div className="flex flex-wrap gap-2">
+                    <SaveRoomRecordButton idleLabel="수정 내용 저장" pendingLabel="수정 중..." />
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          <aside className="grid gap-4">
+            <Card className={surfaceClassName}>
+              <CardHeader className="gap-3">
+                <Badge className="rounded-full" variant="outline">
+                  저장 요약
+                </Badge>
+                <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
+                  지금 저장된 값
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 text-sm leading-6 text-muted-foreground">
+                <div className="rounded-[20px] border border-border/70 bg-white/45 p-4">
+                  <p>월세 {formatCurrencyInManwon(record.monthly_rent)}</p>
+                  <p>관리비 {formatCurrencyInManwon(record.maintenance_fee)}</p>
+                  <p>주소 {record.address ?? "미입력"}</p>
+                </div>
+                <div className="rounded-[20px] border border-border/70 bg-white/45 p-4">
+                  <p>수압 {formatCondition(record.water_pressure)}</p>
+                  <p>채광 {formatCondition(record.sunlight)}</p>
+                  <p>소음 {formatCondition(record.noise)}</p>
+                  <p>벌레·위생 {formatCondition(record.sanitation)}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className={surfaceClassName}>
+              <CardHeader className="gap-3">
+                <Badge className="rounded-full" variant="destructive">
+                  danger zone
+                </Badge>
+                <CardTitle className="font-serif text-2xl">
+                  이 기록 삭제
+                </CardTitle>
+                <CardDescription className="text-sm leading-6 text-muted-foreground">
+                  삭제하면 비교 목록과 상세 화면에서도 바로 사라집니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form action={deleteRoomRecord} className="flex flex-wrap gap-2">
+                  <input name="recordId" type="hidden" value={record.id} />
+                  <DeleteRoomRecordButton />
+                </form>
+              </CardContent>
+            </Card>
+          </aside>
+        </section>
+      </main>
+    </div>
+  );
+}

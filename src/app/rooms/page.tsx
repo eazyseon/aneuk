@@ -33,6 +33,8 @@ const surfaceClassName =
 type RoomsPageProps = {
   searchParams: Promise<{
     created?: string;
+    deleted?: string;
+    error?: string;
     ids?: string | string[];
   }>;
 };
@@ -53,7 +55,7 @@ function getConditionSummary(record: RoomRecord) {
 
 export default async function RoomsPage({ searchParams }: RoomsPageProps) {
   const user = await requireUser("/rooms");
-  const { created, ids } = await searchParams;
+  const { created, deleted, error, ids } = await searchParams;
   const selectedIds = parseRecordIds(ids);
   let records: RoomRecord[] = [];
   let loadError = false;
@@ -107,6 +109,18 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
           {created === "1" ? (
             <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm leading-6 text-emerald-900">
               새 기록을 저장했습니다. 바로 아래에서 비교 후보를 골라볼 수 있습니다.
+            </div>
+          ) : null}
+
+          {deleted === "1" ? (
+            <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm leading-6 text-emerald-900">
+              기록을 삭제했습니다.
+            </div>
+          ) : null}
+
+          {error === "record_not_found" ? (
+            <div className="rounded-[24px] border border-destructive/25 bg-destructive/8 px-5 py-4 text-sm leading-6 text-destructive">
+              요청한 기록을 찾을 수 없거나 수정 권한이 없습니다.
             </div>
           ) : null}
 
@@ -199,6 +213,14 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
                           {record.note ?? "남겨둔 메모가 아직 없습니다."}
                         </p>
                       </CardContent>
+                      <CardFooter className="flex flex-wrap justify-between gap-2 bg-transparent">
+                        <Badge className="rounded-full" variant="outline">
+                          체크 후 비교 큐에 반영
+                        </Badge>
+                        <Button asChild className="rounded-full px-4" size="sm" variant="outline">
+                          <Link href={`/rooms/${record.id}`}>상세 보기</Link>
+                        </Button>
+                      </CardFooter>
                     </Card>
                   );
                 })}

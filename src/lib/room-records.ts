@@ -135,3 +135,19 @@ export async function listRoomRecordsByIds(userId: string, ids: string[]) {
 
   return orderRecordsByIds((data ?? []) as RoomRecord[], ids);
 }
+
+export async function getRoomRecordById(userId: string, id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("room_records")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? null) as RoomRecord | null;
+}
