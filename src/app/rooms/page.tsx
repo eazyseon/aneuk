@@ -12,40 +12,60 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { requireUser } from "@/lib/auth/guards";
+import {
+  buildIdsSearchParams,
+  formatCondition,
+  formatCurrencyInManwon,
+  getRoomRecordMeta,
+  getRoomRecordName,
+  listRoomRecords,
+  parseRecordIds,
+  type RoomRecord,
+} from "@/lib/room-records";
 
 export const metadata = {
   title: "내 기록",
 };
 
-const records = [
-  {
-    name: "신림동 / 2026-06-09",
-    visitedAt: "2026-06-09",
-    rent: "55만원",
-    status: "비교 후보",
-    note: "수압 메모 있음 · 관리비 미입력",
-  },
-  {
-    name: "봉천동 햇빛 좋던 방",
-    visitedAt: "2026-06-07",
-    rent: "62만원",
-    status: "기록 완료",
-    note: "채광 좋음 · 관리비 7만원",
-  },
-  {
-    name: "서울대입구역 도보 8분",
-    visitedAt: "2026-06-03",
-    rent: "50만원",
-    status: "비교 후보",
-    note: "수압 좋음 · 옵션 메모 있음",
-  },
-];
-
 const surfaceClassName =
   "rounded-[28px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,252,246,0.95),rgba(255,249,240,0.82))] shadow-[var(--shadow)] backdrop-blur-sm";
 
-export default async function RoomsPage() {
-  await requireUser("/rooms");
+type RoomsPageProps = {
+  searchParams: Promise<{
+    created?: string;
+    ids?: string | string[];
+  }>;
+};
+
+function getSelectedRecords(records: RoomRecord[], selectedIds: string[]) {
+  const selectedIdSet = new Set(selectedIds);
+  return records.filter((record) => selectedIdSet.has(record.id));
+}
+
+function getConditionSummary(record: RoomRecord) {
+  return [
+    `수압 ${formatCondition(record.water_pressure)}`,
+    `채광 ${formatCondition(record.sunlight)}`,
+    `소음 ${formatCondition(record.noise)}`,
+    `벌레·위생 ${formatCondition(record.sanitation)}`,
+  ].join(" · ");
+}
+
+export default async function RoomsPage({ searchParams }: RoomsPageProps) {
+  const user = await requireUser("/rooms");
+  const { created, ids } = await searchParams;
+  const selectedIds = parseRecordIds(ids);
+  let records: RoomRecord[] = [];
+  let loadError = false;
+
+  try {
+    records = await listRoomRecords(user.id);
+  } catch {
+    loadError = true;
+  }
+
+  const selectedRecords = getSelectedRecords(records, selectedIds);
+  const queueQuery = buildIdsSearchParams(selectedIds);
 
   return (
     <div className="aneuk-shell">
@@ -77,105 +97,179 @@ export default async function RoomsPage() {
                   최근에 본 방부터 차례로 정리합니다
                 </CardTitle>
                 <CardDescription className="max-w-2xl text-base leading-7 text-muted-foreground md:text-[1.05rem]">
-                  이후 실제 구현에서는 여기에 로그인 사용자 기준의 기록 목록과
-                  비교용 선택 상태가 들어갑니다.
+                  로그인한 사용자 기준으로 방 기록을 불러오고, 선택한 항목만 묶어서
+                  비교 화면으로 보냅니다.
                 </CardDescription>
               </div>
             </CardHeader>
           </Card>
 
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.9fr)]">
-            <section className="grid gap-3">
-              {records.map((record) => (
-                <Card
-                  className={surfaceClassName}
-                  key={`${record.name}-${record.visitedAt}`}
-                >
+          {created === "1" ? (
+            <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm leading-6 text-emerald-900">
+              새 기록을 저장했습니다. 바로 아래에서 비교 후보를 골라볼 수 있습니다.
+            </div>
+          ) : null}
+
+          {loadError ? (
+            <Card className={surfaceClassName}>
+              <CardHeader className="gap-3">
+                <Badge className="rounded-full" variant="destructive">
+                  load error
+                </Badge>
+                <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
+                  기록을 불러오지 못했습니다
+                </CardTitle>
+                <CardDescription className="text-sm leading-6 text-muted-foreground">
+                  Supabase에 `room_records` 테이블과 RLS 정책이 적용됐는지 먼저 확인해
+                  주세요.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : records.length === 0 ? (
+            <Card className={surfaceClassName}>
+              <CardHeader className="gap-3">
+                <Badge className="rounded-full" variant="outline">
+                  empty state
+                </Badge>
+                <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
+                  아직 저장된 방 기록이 없습니다
+                </CardTitle>
+                <CardDescription className="text-sm leading-6 text-muted-foreground">
+                  첫 기록을 만든 뒤 목록과 비교 흐름이 같은 데이터 위에서 움직이게
+                  됩니다.
+                </CardDescription>
+              </CardHeader>
+              <CardFooter className="bg-transparent">
+                <Button asChild className="rounded-full px-4">
+                  <Link href="/rooms/new">첫 기록 만들기</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          ) : (
+            <form className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.9fr)]" method="get">
+              <section className="grid gap-3">
+                {records.map((record) => {
+                  const isSelected = selectedIds.includes(record.id);
+
+                  return (
+                    <Card className={surfaceClassName} key={record.id}>
+                      <CardHeader className="gap-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3">
+                              <input
+                                className="size-4 rounded border-input accent-[var(--primary)]"
+                                defaultChecked={isSelected}
+                                id={`room-record-${record.id}`}
+                                name="ids"
+                                type="checkbox"
+                                value={record.id}
+                              />
+                              <label
+                                className="font-serif text-2xl tracking-[-0.03em]"
+                                htmlFor={`room-record-${record.id}`}
+                              >
+                                {getRoomRecordName(record)}
+                              </label>
+                            </div>
+                            <CardDescription className="text-sm leading-6 text-muted-foreground">
+                              {getRoomRecordMeta(record)}
+                            </CardDescription>
+                          </div>
+                          <Badge className="rounded-full" variant={isSelected ? "default" : "outline"}>
+                            {isSelected ? "비교 큐에 포함" : "선택 가능"}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="grid gap-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Badge className="rounded-full" variant="outline">
+                            관리비 {formatCurrencyInManwon(record.maintenance_fee)}
+                          </Badge>
+                          {record.address ? (
+                            <Badge className="rounded-full" variant="secondary">
+                              {record.address}
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {getConditionSummary(record)}
+                        </p>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {record.note ?? "남겨둔 메모가 아직 없습니다."}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </section>
+
+              <aside className="grid gap-4">
+                <Card className={surfaceClassName}>
                   <CardHeader className="gap-3">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-2">
-                        <CardTitle className="font-serif text-2xl tracking-[-0.03em]">
-                          {record.name}
-                        </CardTitle>
-                        <CardDescription className="text-sm leading-6 text-muted-foreground">
-                          방문일 {record.visitedAt} · 월세 {record.rent}
-                        </CardDescription>
-                      </div>
-                      <Badge
-                        className="rounded-full"
-                        variant={
-                          record.status === "비교 후보" ? "default" : "secondary"
-                        }
-                      >
-                        {record.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {record.note}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex flex-wrap justify-between gap-2 bg-transparent">
                     <Badge className="rounded-full" variant="outline">
-                      최근 방문순
+                      비교 큐
                     </Badge>
-                    <div className="flex gap-2">
-                      <Button className="rounded-full px-4" size="sm" variant="outline">
-                        상세 보기
-                      </Button>
-                      <Button className="rounded-full px-4" size="sm">
-                        비교에 담기
-                      </Button>
-                    </div>
+                    <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
+                      선택한 기록 {selectedRecords.length}개
+                    </CardTitle>
+                    <CardDescription className="text-sm leading-6 text-muted-foreground">
+                      2개 이상 고르면 비교 화면으로 바로 보낼 수 있습니다.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {selectedRecords.length > 0 ? (
+                      selectedRecords.map((record) => (
+                        <div
+                          className="rounded-[20px] border border-border/70 bg-white/45 p-4"
+                          key={`queue-${record.id}`}
+                        >
+                          <p className="font-medium">{getRoomRecordName(record)}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {getRoomRecordMeta(record)}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-[20px] border border-dashed border-border/80 bg-white/35 p-4 text-sm leading-6 text-muted-foreground">
+                        왼쪽 카드에서 비교할 기록을 체크한 뒤 선택 반영을 눌러 주세요.
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter className="flex flex-col items-stretch gap-2 bg-transparent">
+                    <Button className="w-full rounded-full" formAction="/rooms" formMethod="get" variant="outline">
+                      선택 반영
+                    </Button>
+                    <Button
+                      className="w-full rounded-full"
+                      formAction="/compare"
+                      formMethod="get"
+                    >
+                      선택한 기록 비교하기
+                    </Button>
+                    {selectedRecords.length >= 2 ? (
+                      <Link
+                        className="text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+                        href={`/compare?${queueQuery}`}
+                      >
+                        현재 선택을 링크로 열기
+                      </Link>
+                    ) : null}
                   </CardFooter>
                 </Card>
-              ))}
-            </section>
 
-            <aside className="grid gap-4">
-              <Card className={surfaceClassName}>
-                <CardHeader className="gap-3">
-                  <Badge className="rounded-full" variant="outline">
-                    비교 큐
-                  </Badge>
-                  <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
-                    선택한 기록을 모아두는 자리
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {records
-                    .filter((record) => record.status === "비교 후보")
-                    .map((record) => (
-                      <div
-                        className="rounded-[20px] border border-border/70 bg-white/45 p-4"
-                        key={`queue-${record.name}`}
-                      >
-                        <p className="font-medium">{record.name}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          월세 {record.rent} · 비교 화면 진입 예정
-                        </p>
-                      </div>
-                    ))}
-                </CardContent>
-                <CardFooter className="bg-transparent">
-                  <Button asChild className="w-full rounded-full">
-                    <Link href="/compare">2개 기록 비교하기</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              <Card className={surfaceClassName}>
-                <CardHeader className="gap-2">
-                  <CardTitle className="font-serif text-2xl">다음 단계</CardTitle>
-                  <CardDescription className="text-sm leading-6 text-muted-foreground">
-                    로그인 연동 후 이 페이지에서 기록 선택, 정렬, 비교 진입을
-                    실제 상태로 연결합니다.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </aside>
-          </div>
+                <Card className={surfaceClassName}>
+                  <CardHeader className="gap-2">
+                    <CardTitle className="font-serif text-2xl">현재 기준</CardTitle>
+                    <CardDescription className="text-sm leading-6 text-muted-foreground">
+                      총점 계산 없이 가격, 상태, 메모, 미입력 값을 그대로 보여주는 것이
+                      v1의 기준입니다.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </aside>
+            </form>
+          )}
         </section>
       </main>
     </div>
