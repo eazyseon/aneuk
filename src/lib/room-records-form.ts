@@ -1,4 +1,7 @@
-import { ROOM_CONDITION_VALUES, type RoomCondition } from "@/lib/room-records";
+import {
+  ROOM_CONDITION_VALUES,
+  type RoomCondition,
+} from "@/lib/room-record-types";
 
 export const ROOM_CONDITION_OPTIONS: Array<{ label: string; value: RoomCondition }> = [
   { value: "good", label: "좋음" },
@@ -14,6 +17,31 @@ export type RoomRecordFormErrorCode =
   | "invalid_condition"
   | "save_failed"
   | "record_not_found";
+
+export type RoomRecordFormFieldName =
+  | "visitedAt"
+  | "districtName"
+  | "address"
+  | "monthlyRent"
+  | "maintenanceFee"
+  | "waterPressure"
+  | "sunlight"
+  | "noise"
+  | "sanitation";
+
+export type RoomRecordFormFieldErrors = Partial<
+  Record<RoomRecordFormFieldName, string>
+>;
+
+export type RoomRecordFormState = {
+  fieldErrors: RoomRecordFormFieldErrors;
+  formError: string | null;
+};
+
+export const EMPTY_ROOM_RECORD_FORM_STATE: RoomRecordFormState = {
+  fieldErrors: {},
+  formError: null,
+};
 
 export const ROOM_RECORD_FORM_ERROR_MESSAGES: Record<RoomRecordFormErrorCode, string> = {
   missing_required: "방문일과 동네명은 꼭 입력해 주세요.",
@@ -55,6 +83,23 @@ export type RoomRecordMutationInput = {
   note: string | null;
 };
 
+export type RoomRecordFormAction = (
+  state: RoomRecordFormState,
+  formData: FormData,
+) => Promise<RoomRecordFormState>;
+
+type OptionalIntegerResult =
+  | { error: "invalid_number"; value: null }
+  | { error: null; value: number | null };
+
+type OptionalFloatResult =
+  | { error: "invalid_location"; value: null }
+  | { error: null; value: number | null };
+
+type OptionalConditionResult =
+  | { error: "invalid_condition"; value: null }
+  | { error: null; value: RoomCondition | null };
+
 function getTrimmedString(formData: FormData, key: string) {
   const value = formData.get(key);
 
@@ -70,50 +115,56 @@ function getOptionalString(formData: FormData, key: string) {
   return value.length > 0 ? value : null;
 }
 
-function getOptionalInteger(formData: FormData, key: string) {
+function getOptionalInteger(
+  formData: FormData,
+  key: string,
+): OptionalIntegerResult {
   const value = getTrimmedString(formData, key);
 
   if (!value) {
-    return { value: null };
+    return { error: null, value: null };
   }
 
   const parsed = Number(value);
 
   if (!Number.isInteger(parsed) || parsed < 0) {
-    return { error: "invalid_number" as const };
+    return { error: "invalid_number", value: null };
   }
 
-  return { value: parsed };
+  return { error: null, value: parsed };
 }
 
-function getOptionalFloat(formData: FormData, key: string) {
+function getOptionalFloat(formData: FormData, key: string): OptionalFloatResult {
   const value = getTrimmedString(formData, key);
 
   if (!value) {
-    return { value: null };
+    return { error: null, value: null };
   }
 
   const parsed = Number(value);
 
   if (Number.isNaN(parsed)) {
-    return { error: "invalid_location" as const };
+    return { error: "invalid_location", value: null };
   }
 
-  return { value: parsed };
+  return { error: null, value: parsed };
 }
 
-function getOptionalCondition(formData: FormData, key: string) {
+function getOptionalCondition(
+  formData: FormData,
+  key: string,
+): OptionalConditionResult {
   const value = getTrimmedString(formData, key);
 
   if (!value) {
-    return { value: null };
+    return { error: null, value: null };
   }
 
   if (!ROOM_CONDITION_VALUES.includes(value as RoomCondition)) {
-    return { error: "invalid_condition" as const };
+    return { error: "invalid_condition", value: null };
   }
 
-  return { value: value as RoomCondition };
+  return { error: null, value: value as RoomCondition };
 }
 
 function isIsoDate(value: string) {
@@ -122,70 +173,81 @@ function isIsoDate(value: string) {
 
 export function parseRoomRecordFormData(
   formData: FormData,
-): { data: RoomRecordMutationInput } | { error: RoomRecordFormErrorCode } {
+):
+  | { data: RoomRecordMutationInput }
+  | { fieldErrors: RoomRecordFormFieldErrors } {
   const visitedAt = getTrimmedString(formData, "visitedAt");
   const districtName = getTrimmedString(formData, "districtName");
+  const fieldErrors: RoomRecordFormFieldErrors = {};
 
-  if (!visitedAt || !districtName) {
-    return { error: "missing_required" };
+  if (!visitedAt) {
+    fieldErrors.visitedAt = "방문일을 입력해 주세요.";
   }
 
-  if (!isIsoDate(visitedAt)) {
-    return { error: "invalid_date" };
+  if (visitedAt && !isIsoDate(visitedAt)) {
+    fieldErrors.visitedAt = "올바른 날짜를 입력해 주세요.";
+  }
+
+  if (!districtName) {
+    fieldErrors.districtName = "동네명을 입력해 주세요.";
   }
 
   const monthlyRent = getOptionalInteger(formData, "monthlyRent");
   if (monthlyRent.error) {
-    return { error: monthlyRent.error };
+    fieldErrors.monthlyRent = "월세는 0 이상의 정수로 입력해 주세요.";
   }
 
   const maintenanceFee = getOptionalInteger(formData, "maintenanceFee");
   if (maintenanceFee.error) {
-    return { error: maintenanceFee.error };
+    fieldErrors.maintenanceFee = "관리비는 0 이상의 정수로 입력해 주세요.";
   }
 
   const latitude = getOptionalFloat(formData, "latitude");
   if (latitude.error) {
-    return { error: latitude.error };
+    fieldErrors.address = "위치 정보가 올바르지 않습니다.";
   }
 
   const longitude = getOptionalFloat(formData, "longitude");
   if (longitude.error) {
-    return { error: longitude.error };
+    fieldErrors.address = "위치 정보가 올바르지 않습니다.";
   }
 
   if (
     latitude.value !== null &&
     (latitude.value < -90 || latitude.value > 90)
   ) {
-    return { error: "invalid_location" };
+    fieldErrors.address = "위치 정보가 올바르지 않습니다.";
   }
 
   if (
     longitude.value !== null &&
     (longitude.value < -180 || longitude.value > 180)
   ) {
-    return { error: "invalid_location" };
+    fieldErrors.address = "위치 정보가 올바르지 않습니다.";
   }
 
   const waterPressure = getOptionalCondition(formData, "waterPressure");
   if (waterPressure.error) {
-    return { error: waterPressure.error };
+    fieldErrors.waterPressure = "수압 값이 올바르지 않습니다.";
   }
 
   const sunlight = getOptionalCondition(formData, "sunlight");
   if (sunlight.error) {
-    return { error: sunlight.error };
+    fieldErrors.sunlight = "채광 값이 올바르지 않습니다.";
   }
 
   const noise = getOptionalCondition(formData, "noise");
   if (noise.error) {
-    return { error: noise.error };
+    fieldErrors.noise = "소음 값이 올바르지 않습니다.";
   }
 
   const sanitation = getOptionalCondition(formData, "sanitation");
   if (sanitation.error) {
-    return { error: sanitation.error };
+    fieldErrors.sanitation = "벌레·위생 값이 올바르지 않습니다.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors };
   }
 
   return {
@@ -204,5 +266,23 @@ export function parseRoomRecordFormData(
       sanitation: sanitation.value,
       note: getOptionalString(formData, "note"),
     },
+  };
+}
+
+export function getRoomRecordFormStateFromFieldErrors(
+  fieldErrors: RoomRecordFormFieldErrors,
+): RoomRecordFormState {
+  return {
+    fieldErrors,
+    formError: "입력 내용을 다시 확인해 주세요.",
+  };
+}
+
+export function getRoomRecordFormStateFromErrorCode(
+  code: RoomRecordFormErrorCode,
+): RoomRecordFormState {
+  return {
+    fieldErrors: {},
+    formError: getRoomRecordFormErrorMessage(code),
   };
 }

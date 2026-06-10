@@ -1,9 +1,14 @@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ROOM_CONDITION_OPTIONS } from "@/lib/room-records-form";
-import { type RoomRecord } from "@/lib/room-records";
+import {
+  ROOM_CONDITION_OPTIONS,
+  type RoomRecordFormFieldErrors,
+} from "@/lib/room-records-form";
+import { type RoomRecord } from "@/lib/room-record-types";
+import { cn } from "@/lib/utils";
 
 type RoomRecordFormFieldsProps = {
+  fieldErrors?: RoomRecordFormFieldErrors;
   record?: RoomRecord | null;
 };
 
@@ -11,32 +16,54 @@ const selectClassName =
   "h-12 w-full rounded-[18px] border border-input bg-white/55 px-4 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function RoomRecordFormFields({
+  fieldErrors,
   record,
 }: RoomRecordFormFieldsProps) {
+  const getFieldClassName = (hasError?: boolean) =>
+    cn(
+      hasError &&
+        "border-destructive/60 bg-destructive/5 focus-visible:border-destructive focus-visible:ring-destructive/20",
+    );
+
+  const renderFieldError = (message?: string) =>
+    message ? (
+      <p className="text-sm leading-6 text-destructive">{message}</p>
+    ) : null;
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="visitedAt">
           방문일
           <Input
-            className="h-12 rounded-[18px] bg-white/55 px-4 text-foreground"
+            aria-invalid={Boolean(fieldErrors?.visitedAt)}
+            className={cn(
+              "h-12 rounded-[18px] bg-white/55 px-4 text-foreground",
+              getFieldClassName(Boolean(fieldErrors?.visitedAt)),
+            )}
             defaultValue={record?.visited_at ?? ""}
             id="visitedAt"
             name="visitedAt"
             required
             type="date"
           />
+          {renderFieldError(fieldErrors?.visitedAt)}
         </label>
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="districtName">
           동네명
           <Input
-            className="h-12 rounded-[18px] bg-white/55 px-4 text-foreground"
+            aria-invalid={Boolean(fieldErrors?.districtName)}
+            className={cn(
+              "h-12 rounded-[18px] bg-white/55 px-4 text-foreground",
+              getFieldClassName(Boolean(fieldErrors?.districtName)),
+            )}
             defaultValue={record?.district_name ?? ""}
             id="districtName"
             name="districtName"
             placeholder="신림동"
             required
           />
+          {renderFieldError(fieldErrors?.districtName)}
         </label>
       </div>
 
@@ -54,12 +81,17 @@ export function RoomRecordFormFields({
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="address">
           주소
           <Input
-            className="h-12 rounded-[18px] bg-white/55 px-4 text-foreground"
+            aria-invalid={Boolean(fieldErrors?.address)}
+            className={cn(
+              "h-12 rounded-[18px] bg-white/55 px-4 text-foreground",
+              getFieldClassName(Boolean(fieldErrors?.address)),
+            )}
             defaultValue={record?.address ?? ""}
             id="address"
             name="address"
             placeholder="관악구 신림동 ..."
           />
+          {renderFieldError(fieldErrors?.address)}
         </label>
       </div>
 
@@ -67,7 +99,11 @@ export function RoomRecordFormFields({
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="monthlyRent">
           월세
           <Input
-            className="h-12 rounded-[18px] bg-white/55 px-4 text-foreground"
+            aria-invalid={Boolean(fieldErrors?.monthlyRent)}
+            className={cn(
+              "h-12 rounded-[18px] bg-white/55 px-4 text-foreground",
+              getFieldClassName(Boolean(fieldErrors?.monthlyRent)),
+            )}
             defaultValue={record?.monthly_rent ?? ""}
             id="monthlyRent"
             inputMode="numeric"
@@ -76,11 +112,16 @@ export function RoomRecordFormFields({
             placeholder="55"
             type="number"
           />
+          {renderFieldError(fieldErrors?.monthlyRent)}
         </label>
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="maintenanceFee">
           관리비
           <Input
-            className="h-12 rounded-[18px] bg-white/55 px-4 text-foreground"
+            aria-invalid={Boolean(fieldErrors?.maintenanceFee)}
+            className={cn(
+              "h-12 rounded-[18px] bg-white/55 px-4 text-foreground",
+              getFieldClassName(Boolean(fieldErrors?.maintenanceFee)),
+            )}
             defaultValue={record?.maintenance_fee ?? ""}
             id="maintenanceFee"
             inputMode="numeric"
@@ -89,6 +130,7 @@ export function RoomRecordFormFields({
             placeholder="7"
             type="number"
           />
+          {renderFieldError(fieldErrors?.maintenanceFee)}
         </label>
       </div>
 
@@ -96,7 +138,11 @@ export function RoomRecordFormFields({
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="waterPressure">
           수압
           <select
-            className={selectClassName}
+            aria-invalid={Boolean(fieldErrors?.waterPressure)}
+            className={cn(
+              selectClassName,
+              getFieldClassName(Boolean(fieldErrors?.waterPressure)),
+            )}
             defaultValue={record?.water_pressure ?? ""}
             id="waterPressure"
             name="waterPressure"
@@ -108,11 +154,16 @@ export function RoomRecordFormFields({
               </option>
             ))}
           </select>
+          {renderFieldError(fieldErrors?.waterPressure)}
         </label>
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="sunlight">
           채광
           <select
-            className={selectClassName}
+            aria-invalid={Boolean(fieldErrors?.sunlight)}
+            className={cn(
+              selectClassName,
+              getFieldClassName(Boolean(fieldErrors?.sunlight)),
+            )}
             defaultValue={record?.sunlight ?? ""}
             id="sunlight"
             name="sunlight"
@@ -124,6 +175,7 @@ export function RoomRecordFormFields({
               </option>
             ))}
           </select>
+          {renderFieldError(fieldErrors?.sunlight)}
         </label>
       </div>
 
@@ -131,7 +183,11 @@ export function RoomRecordFormFields({
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="noise">
           소음
           <select
-            className={selectClassName}
+            aria-invalid={Boolean(fieldErrors?.noise)}
+            className={cn(
+              selectClassName,
+              getFieldClassName(Boolean(fieldErrors?.noise)),
+            )}
             defaultValue={record?.noise ?? ""}
             id="noise"
             name="noise"
@@ -143,11 +199,16 @@ export function RoomRecordFormFields({
               </option>
             ))}
           </select>
+          {renderFieldError(fieldErrors?.noise)}
         </label>
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="sanitation">
           벌레·위생
           <select
-            className={selectClassName}
+            aria-invalid={Boolean(fieldErrors?.sanitation)}
+            className={cn(
+              selectClassName,
+              getFieldClassName(Boolean(fieldErrors?.sanitation)),
+            )}
             defaultValue={record?.sanitation ?? ""}
             id="sanitation"
             name="sanitation"
@@ -159,6 +220,7 @@ export function RoomRecordFormFields({
               </option>
             ))}
           </select>
+          {renderFieldError(fieldErrors?.sanitation)}
         </label>
       </div>
 

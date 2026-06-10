@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/guards";
-import { parseRoomRecordFormData } from "@/lib/room-records-form";
+import {
+  getRoomRecordFormStateFromErrorCode,
+  getRoomRecordFormStateFromFieldErrors,
+  type RoomRecordFormState,
+  parseRoomRecordFormData,
+} from "@/lib/room-records-form";
 import { createClient } from "@/lib/supabase/server";
 
 function getRecordId(formData: FormData) {
@@ -12,18 +17,21 @@ function getRecordId(formData: FormData) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export async function updateRoomRecord(formData: FormData) {
+export async function updateRoomRecord(
+  _: RoomRecordFormState,
+  formData: FormData,
+): Promise<RoomRecordFormState> {
   const recordId = getRecordId(formData);
 
   if (!recordId) {
-    redirect("/rooms?error=record_not_found");
+    return getRoomRecordFormStateFromErrorCode("record_not_found");
   }
 
   const user = await requireUser(`/rooms/${recordId}`);
   const parsed = parseRoomRecordFormData(formData);
 
-  if ("error" in parsed) {
-    redirect(`/rooms/${recordId}?error=${parsed.error}`);
+  if ("fieldErrors" in parsed) {
+    return getRoomRecordFormStateFromFieldErrors(parsed.fieldErrors);
   }
 
   const supabase = await createClient();
@@ -36,11 +44,11 @@ export async function updateRoomRecord(formData: FormData) {
     .maybeSingle();
 
   if (error) {
-    redirect(`/rooms/${recordId}?error=save_failed`);
+    return getRoomRecordFormStateFromErrorCode("save_failed");
   }
 
   if (!data) {
-    redirect("/rooms?error=record_not_found");
+    return getRoomRecordFormStateFromErrorCode("record_not_found");
   }
 
   revalidatePath("/rooms");

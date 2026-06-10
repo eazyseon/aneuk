@@ -4,15 +4,23 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/guards";
-import { parseRoomRecordFormData } from "@/lib/room-records-form";
+import {
+  getRoomRecordFormStateFromErrorCode,
+  getRoomRecordFormStateFromFieldErrors,
+  type RoomRecordFormState,
+  parseRoomRecordFormData,
+} from "@/lib/room-records-form";
 import { createClient } from "@/lib/supabase/server";
 
-export async function createRoomRecord(formData: FormData) {
+export async function createRoomRecord(
+  _: RoomRecordFormState,
+  formData: FormData,
+): Promise<RoomRecordFormState> {
   const user = await requireUser("/rooms/new");
   const parsed = parseRoomRecordFormData(formData);
 
-  if ("error" in parsed) {
-    redirect(`/rooms/new?error=${parsed.error}`);
+  if ("fieldErrors" in parsed) {
+    return getRoomRecordFormStateFromFieldErrors(parsed.fieldErrors);
   }
 
   const supabase = await createClient();
@@ -22,7 +30,7 @@ export async function createRoomRecord(formData: FormData) {
   });
 
   if (error) {
-    redirect("/rooms/new?error=save_failed");
+    return getRoomRecordFormStateFromErrorCode("save_failed");
   }
 
   revalidatePath("/rooms");

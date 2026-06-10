@@ -2,10 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { deleteRoomRecord, updateRoomRecord } from "@/app/rooms/[id]/actions";
+import { RoomRecordActionForm } from "@/components/rooms/room-record-action-form";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { DeleteRoomRecordButton } from "@/components/rooms/delete-room-record-button";
-import { RoomRecordFormFields } from "@/components/rooms/room-record-form-fields";
-import { SaveRoomRecordButton } from "@/components/rooms/save-room-record-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +21,6 @@ import {
   getRoomRecordById,
   getRoomRecordName,
 } from "@/lib/room-records";
-import { getRoomRecordFormErrorMessage } from "@/lib/room-records-form";
 
 export const metadata = {
   title: "기록 상세",
@@ -36,7 +34,6 @@ type RoomDetailPageProps = {
     id: string;
   }>;
   searchParams: Promise<{
-    error?: string;
     updated?: string;
   }>;
 };
@@ -46,7 +43,7 @@ export default async function RoomDetailPage({
   searchParams,
 }: RoomDetailPageProps) {
   const { id } = await params;
-  const { error, updated } = await searchParams;
+  const { updated } = await searchParams;
   const user = await requireUser(`/rooms/${id}`);
 
   let record = null;
@@ -127,35 +124,28 @@ export default async function RoomDetailPage({
             </CardHeader>
 
             <CardContent>
-              <form action={updateRoomRecord} className="grid gap-5">
+              <div className="grid gap-5">
                 {updated === "1" ? (
                   <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
                     기록을 수정했습니다.
                   </div>
                 ) : null}
-                {error ? (
-                  <div className="rounded-[20px] border border-destructive/25 bg-destructive/8 p-4 text-sm leading-6 text-destructive">
-                    {getRoomRecordFormErrorMessage(error)}
-                  </div>
-                ) : null}
-
-                <input name="recordId" type="hidden" value={record.id} />
-                <RoomRecordFormFields record={record} />
-
-                <div className="rounded-[20px] border border-border/70 bg-white/45 p-4 text-sm leading-6 text-muted-foreground">
-                  지도와 위치 수정 UI는 다음 단계에서 붙입니다. 지금은 저장된 주소와 좌표
-                  컬럼을 유지한 채 텍스트 기록을 먼저 안정화합니다.
-                </div>
-
-                <div className="flex flex-wrap justify-between gap-3">
-                  <Badge className="rounded-full" variant="outline">
-                    마지막 수정 {new Date(record.updated_at).toLocaleDateString("ko-KR")}
-                  </Badge>
-                  <div className="flex flex-wrap gap-2">
-                    <SaveRoomRecordButton idleLabel="수정 내용 저장" pendingLabel="수정 중..." />
-                  </div>
-                </div>
-              </form>
+                <RoomRecordActionForm
+                  action={updateRoomRecord}
+                  cancelHref="/rooms"
+                  footerBadge={`마지막 수정 ${new Date(record.updated_at).toLocaleDateString("ko-KR")}`}
+                  helperText={
+                    <>
+                      지도와 위치 수정 UI는 다음 단계에서 붙입니다. 지금은 저장된 주소와
+                      좌표 컬럼을 유지한 채 텍스트 기록을 먼저 안정화합니다.
+                    </>
+                  }
+                  record={record}
+                  recordId={record.id}
+                  submitIdleLabel="수정 내용 저장"
+                  submitPendingLabel="수정 중..."
+                />
+              </div>
             </CardContent>
           </Card>
 

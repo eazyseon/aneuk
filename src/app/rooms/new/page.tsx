@@ -1,9 +1,8 @@
 import Link from "next/link";
 
 import { createRoomRecord } from "@/app/rooms/new/actions";
-import { RoomRecordFormFields } from "@/components/rooms/room-record-form-fields";
+import { RoomRecordActionForm } from "@/components/rooms/room-record-action-form";
 import { SignOutButton } from "@/components/auth/sign-out-button";
-import { SaveRoomRecordButton } from "@/components/rooms/save-room-record-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +13,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { requireUser } from "@/lib/auth/guards";
-import { getRoomRecordFormErrorMessage } from "@/lib/room-records-form";
 
 export const metadata = {
   title: "새 기록",
@@ -38,14 +36,7 @@ const principles = [
 const surfaceClassName =
   "rounded-[28px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,252,246,0.95),rgba(255,249,240,0.82))] shadow-[var(--shadow)] backdrop-blur-sm";
 
-type NewRoomPageProps = {
-  searchParams: Promise<{
-    error?: string;
-  }>;
-};
-
-export default async function NewRoomPage({ searchParams }: NewRoomPageProps) {
-  const { error } = await searchParams;
+export default async function NewRoomPage() {
   await requireUser("/rooms/new");
 
   return (
@@ -82,32 +73,19 @@ export default async function NewRoomPage({ searchParams }: NewRoomPageProps) {
             </CardHeader>
 
             <CardContent>
-              <form action={createRoomRecord} className="grid gap-5">
-                {error ? (
-                  <div className="rounded-[20px] border border-destructive/25 bg-destructive/8 p-4 text-sm leading-6 text-destructive">
-                    {getRoomRecordFormErrorMessage(error)}
-                  </div>
-                ) : null}
-
-                <RoomRecordFormFields />
-
-                <div className="rounded-[20px] border border-border/70 bg-white/45 p-4 text-sm leading-6 text-muted-foreground">
-                  지도는 다음 단계에서 붙입니다. 대신 지금부터 주소와 좌표 컬럼은
-                  저장 가능하게 열어 두었습니다.
-                </div>
-
-                <div className="flex flex-wrap justify-between gap-3">
-                  <Badge className="rounded-full" variant="outline">
-                    비어 있는 값은 나중에 다시 입력 가능
-                  </Badge>
-                  <div className="flex flex-wrap gap-2">
-                    <Button asChild className="rounded-full px-4" variant="outline">
-                      <Link href="/rooms">목록으로</Link>
-                    </Button>
-                    <SaveRoomRecordButton />
-                  </div>
-                </div>
-              </form>
+              <RoomRecordActionForm
+                action={createRoomRecord}
+                cancelHref="/rooms"
+                footerBadge="비어 있는 값은 나중에 다시 입력 가능"
+                helperText={
+                  <>
+                    지도는 다음 단계에서 붙입니다. 대신 지금부터 주소와 좌표 컬럼은
+                    저장 가능하게 열어 두었습니다.
+                  </>
+                }
+                submitIdleLabel="기록 저장하기"
+                submitPendingLabel="저장 중..."
+              />
             </CardContent>
           </Card>
 
