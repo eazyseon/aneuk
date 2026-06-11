@@ -9,8 +9,9 @@
 - 내 기록 상세 화면
 - 선택한 기록 비교
 - 주소가 구체적으로 입력된 기록은 근처 지하철역, 마트, 공원, 헬스장 요약 표시
+- 카카오 지도에서 위치 선택 후 주소/좌표 저장
 
-지도는 아직 붙이지 않았지만, 이후 단계를 위해 `address`, `latitude`, `longitude` 컬럼은 스키마에 포함했습니다.
+지도에서 선택한 위치는 `address`, `latitude`, `longitude` 컬럼에 저장됩니다.
 
 ## 기술 스택
 
@@ -36,11 +37,12 @@ npm run dev
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-project-publishable-key
 KAKAO_REST_API_KEY=your-kakao-rest-api-key
+NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY=your-kakao-javascript-key
 ```
 
 예시는 [.env.local.example](/Users/eazyseon/Desktop/aneuk/.env.local.example:1)에 있습니다.
 
-`KAKAO_REST_API_KEY`는 선택 사항이지만, 설정하면 주소 기반 좌표 보정과 근처 생활권 요약을 사용할 수 있습니다.
+`KAKAO_REST_API_KEY`는 주소 기반 좌표 보정과 근처 생활권 요약에 쓰고, `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY`는 브라우저에서 카카오 지도 SDK를 띄울 때 씁니다.
 
 ## Supabase 설정
 

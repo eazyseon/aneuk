@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RoomLocationPickerField } from "@/components/rooms/room-location-picker-field";
 import {
   ROOM_CONDITION_OPTIONS,
   type RoomRecordFormFieldErrors,
@@ -67,7 +68,7 @@ export function RoomRecordFormFields({
         </label>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4">
         <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="nickname">
           별칭
           <Input
@@ -78,21 +79,15 @@ export function RoomRecordFormFields({
             placeholder="신림역 7분 큰창 방"
           />
         </label>
-        <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="address">
-          주소
-          <Input
-            aria-invalid={Boolean(fieldErrors?.address)}
-            className={cn(
-              "h-12 rounded-[18px] bg-white/55 px-4 text-foreground",
-              getFieldClassName(Boolean(fieldErrors?.address)),
-            )}
-            defaultValue={record?.address ?? ""}
-            id="address"
-            name="address"
-            placeholder="관악구 신림동 ..."
-          />
-          {renderFieldError(fieldErrors?.address)}
-        </label>
+      </div>
+
+      <div className="grid gap-4">
+        <RoomLocationPickerField
+          defaultAddress={record?.address}
+          defaultLatitude={record?.latitude}
+          defaultLongitude={record?.longitude}
+          errorMessage={fieldErrors?.address}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -234,9 +229,6 @@ export function RoomRecordFormFields({
           placeholder="수압은 좋았는데 복도 소음이 조금 있었다"
         />
       </label>
-
-      <input name="latitude" type="hidden" value={record?.latitude ?? ""} />
-      <input name="longitude" type="hidden" value={record?.longitude ?? ""} />
     </>
   );
 }

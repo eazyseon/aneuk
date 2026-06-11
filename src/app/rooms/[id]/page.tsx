@@ -175,8 +175,8 @@ export default async function RoomDetailPage({
                   footerBadge={`마지막 수정 ${new Date(record.updated_at).toLocaleDateString("ko-KR")}`}
                   helperText={
                     <>
-                      지도와 위치 수정 UI는 다음 단계에서 붙입니다. 지금은 저장된 주소와
-                      좌표 컬럼을 유지한 채 텍스트 기록을 먼저 안정화합니다.
+                      주소를 다시 검색하거나 지도를 눌러 저장된 집 위치를 수정할 수 있습니다.
+                      생활권 요약은 여기서 확정한 좌표를 기준으로 다시 계산됩니다.
                     </>
                   }
                   record={record}

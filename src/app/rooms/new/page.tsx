@@ -79,9 +79,8 @@ export default async function NewRoomPage() {
                 footerBadge="비어 있는 값은 나중에 다시 입력 가능"
                 helperText={
                   <>
-                    지도는 다음 단계에서 붙입니다. 대신 지금은 주소를 도로명이나 번지까지
-                    구체적으로 입력하면 근처 지하철역, 마트, 공원, 헬스장 요약을 계산할 수
-                    있게 준비해 두었습니다.
+                    주소 검색이나 지도 클릭으로 위치를 먼저 확정해 두면, 저장 후 상세 화면에서
+                    근처 지하철역, 마트, 공원, 헬스장 요약까지 바로 이어서 볼 수 있습니다.
                   </>
                 }
                 submitIdleLabel="기록 저장하기"
@@ -120,10 +119,10 @@ export default async function NewRoomPage() {
 
             <Card className={surfaceClassName}>
               <CardHeader className="gap-2">
-                <CardTitle className="font-serif text-2xl">지도 준비 상태</CardTitle>
+                <CardTitle className="font-serif text-2xl">지도 입력 방식</CardTitle>
                 <CardDescription className="text-sm leading-6 text-muted-foreground">
-                  주소, 위도, 경도 컬럼을 먼저 열어 둔 뒤 입력 폼과 목록을 안정화하는
-                  순서로 진행합니다.
+                  주소 검색으로 먼저 위치를 찾고, 핀을 드래그하거나 지도를 눌러 실제로 보려는
+                  집 위치를 더 세밀하게 맞춥니다.
                 </CardDescription>
               </CardHeader>
             </Card>
