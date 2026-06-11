@@ -8,6 +8,7 @@
 - 로그인 사용자 기준 방 기록 생성, 조회, 수정, 삭제
 - 내 기록 상세 화면
 - 선택한 기록 비교
+- 주소가 구체적으로 입력된 기록은 근처 지하철역, 마트, 공원, 헬스장 요약 표시
 
 지도는 아직 붙이지 않았지만, 이후 단계를 위해 `address`, `latitude`, `longitude` 컬럼은 스키마에 포함했습니다.
 
@@ -34,9 +35,12 @@ npm run dev
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-project-publishable-key
+KAKAO_REST_API_KEY=your-kakao-rest-api-key
 ```
 
 예시는 [.env.local.example](/Users/eazyseon/Desktop/aneuk/.env.local.example:1)에 있습니다.
+
+`KAKAO_REST_API_KEY`는 선택 사항이지만, 설정하면 주소 기반 좌표 보정과 근처 생활권 요약을 사용할 수 있습니다.
 
 ## Supabase 설정
 

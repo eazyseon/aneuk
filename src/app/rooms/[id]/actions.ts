@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/guards";
+import { hydrateRoomRecordLocation } from "@/lib/location-insights";
 import {
   getRoomRecordFormStateFromErrorCode,
   getRoomRecordFormStateFromFieldErrors,
@@ -34,10 +35,12 @@ export async function updateRoomRecord(
     return getRoomRecordFormStateFromFieldErrors(parsed.fieldErrors);
   }
 
+  const enrichedInput = await hydrateRoomRecordLocation(parsed.data);
+
   const supabase = await createClient();
   const { error, data } = await supabase
     .from("room_records")
-    .update(parsed.data)
+    .update(enrichedInput)
     .eq("id", recordId)
     .eq("user_id", user.id)
     .select("id")
