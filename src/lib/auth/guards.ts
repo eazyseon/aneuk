@@ -9,7 +9,9 @@ export async function requireUser(nextPath: string) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+    redirect(
+      `/login?next=${encodeURIComponent(nextPath)}&reason=auth_required`,
+    );
   }
 
   return user;

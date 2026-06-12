@@ -34,16 +34,113 @@ const steps = [
   },
 ];
 
+type AuthBannerTone = "destructive" | "info" | "success";
+
+type AuthBanner =
+  | {
+      message: string;
+      tone: AuthBannerTone;
+    }
+  | null;
+
+function resolveAuthBanner({
+  error,
+  errorDescription,
+  reason,
+  status,
+}: {
+  error?: string;
+  errorDescription?: string;
+  reason?: string;
+  status?: string;
+}): AuthBanner {
+  if (status === "signed_out") {
+    return {
+      message: "로그아웃되었습니다. 다시 로그인하면 내 기록 화면으로 돌아갑니다.",
+      tone: "success",
+    };
+  }
+
+  if (reason === "auth_required") {
+    return {
+      message:
+        "로그인이 필요하거나 세션이 만료되었습니다. 다시 로그인하면 원래 가려던 화면으로 돌아갑니다.",
+      tone: "info",
+    };
+  }
+
+  if (error === "oauth_cancelled") {
+    return {
+      message: "Google 로그인 창이 취소되었습니다. 다시 시도해 주세요.",
+      tone: "destructive",
+    };
+  }
+
+  if (error === "oauth_session_exchange_failed") {
+    return {
+      message:
+        "Google 인증은 끝났지만 세션 생성에 실패했습니다. Supabase 설정을 확인한 뒤 다시 시도해 주세요.",
+      tone: "destructive",
+    };
+  }
+
+  if (error === "oauth_callback_missing_code") {
+    return {
+      message:
+        "OAuth 콜백에 필요한 인증 코드가 없습니다. 로그인 버튼으로 다시 시작해 주세요.",
+      tone: "destructive",
+    };
+  }
+
+  if (error === "oauth_callback_failed") {
+    return {
+      message:
+        "OAuth 콜백 처리에 실패했습니다. Supabase Dashboard의 Google Provider 설정과 Redirect URL을 다시 확인해 주세요.",
+      tone: "destructive",
+    };
+  }
+
+  if (error && errorDescription) {
+    return {
+      message: `로그인 처리 중 오류가 발생했습니다. ${errorDescription}`,
+      tone: "destructive",
+    };
+  }
+
+  return null;
+}
+
+function getBannerClassName(tone: AuthBannerTone) {
+  if (tone === "success") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-900";
+  }
+
+  if (tone === "info") {
+    return "border-amber-200 bg-amber-50 text-amber-900";
+  }
+
+  return "border-destructive/25 bg-destructive/8 text-destructive";
+}
+
 type LoginPageProps = {
   searchParams: Promise<{
     error?: string;
+    error_description?: string;
     next?: string;
+    reason?: string;
+    status?: string;
   }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { error, next } = await searchParams;
+  const { error, error_description, next, reason, status } = await searchParams;
   const nextPath = next?.startsWith("/") ? next : "/rooms";
+  const authBanner = resolveAuthBanner({
+    error,
+    errorDescription: error_description,
+    reason,
+    status,
+  });
 
   await redirectIfAuthenticated(nextPath);
 
@@ -69,14 +166,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <CardContent className="space-y-5">
               <div className="rounded-[22px] border border-border/70 bg-white/45 p-5">
                 <p className="text-sm leading-6 text-muted-foreground">
-                  실제 구현에서는 이 버튼이 Google 인증을 시작하고, 성공 후 `/rooms`
-                  로 이동합니다.
+                  Google 로그인 후 `{nextPath}`로 돌아오고, 보호 페이지에서 튕겨온 경우에도
+                  원래 가려던 화면을 유지합니다.
                 </p>
               </div>
-              {error ? (
-                <div className="rounded-[20px] border border-destructive/25 bg-destructive/8 p-4 text-sm leading-6 text-destructive">
-                  OAuth 콜백 처리에 실패했습니다. `Supabase Dashboard`의 Google Provider
-                  설정과 Redirect URL을 다시 확인해 주세요.
+              {authBanner ? (
+                <div
+                  className={`rounded-[20px] border p-4 text-sm leading-6 ${getBannerClassName(authBanner.tone)}`}
+                >
+                  {authBanner.message}
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2">

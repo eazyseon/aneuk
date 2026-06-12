@@ -23,7 +23,7 @@ export function SignOutButton() {
         return;
       }
 
-      router.push("/login");
+      router.replace("/login?status=signed_out");
       router.refresh();
     });
   };
