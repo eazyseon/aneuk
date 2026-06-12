@@ -22,8 +22,7 @@ import {
   getRoomRecordName,
 } from "@/lib/room-records";
 import {
-  getNearbyAmenityInsights,
-  resolveRecordLocation,
+  getRoomLocationInsightSnapshot,
 } from "@/lib/location-insights";
 
 export const metadata = {
@@ -92,40 +91,8 @@ export default async function RoomDetailPage({
     );
   }
 
-  const resolvedLocation = await resolveRecordLocation(record);
-  const nearbyAmenities =
-    "reason" in resolvedLocation
-      ? []
-      : await getNearbyAmenityInsights(
-          resolvedLocation.latitude,
-          resolvedLocation.longitude,
-        );
-  const amenityBasisNote =
-    "reason" in resolvedLocation
-      ? null
-      : resolvedLocation.source === "stored_coordinates"
-        ? "저장된 좌표 기준"
-        : "저장된 주소를 다시 좌표로 변환한 근사 기준";
-
-  let amenityMessage: string | null = null;
-
-  if ("reason" in resolvedLocation) {
-    if (resolvedLocation.reason === "missing_location") {
-      amenityMessage = "주소나 좌표가 아직 없어 근처 생활권을 계산할 수 없습니다.";
-    } else if (resolvedLocation.reason === "address_needs_detail") {
-      amenityMessage =
-        "근처 생활권을 계산하려면 주소를 도로명이나 번지까지 더 자세히 입력해 주세요.";
-    } else if (resolvedLocation.reason === "api_unavailable") {
-      amenityMessage =
-        "KAKAO_REST_API_KEY를 설정하면 근처 지하철역, 마트, 공원, 헬스장 요약을 볼 수 있습니다.";
-    } else {
-      amenityMessage =
-        "입력한 주소로 위치를 찾지 못했습니다. 주소를 더 정확히 적어 주세요.";
-    }
-  } else if (nearbyAmenities.length === 0) {
-    amenityMessage =
-      "근처 생활권 정보를 찾지 못했습니다. 잠시 후 다시 시도하거나 주소를 더 정확히 입력해 주세요.";
-  }
+  const { amenityBasisNote, amenityMessage, nearbyAmenities } =
+    await getRoomLocationInsightSnapshot(record);
 
   return (
     <div className="aneuk-shell">

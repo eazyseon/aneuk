@@ -27,7 +27,7 @@ type KakaoSearchResponse<TDocument> = {
   documents: TDocument[];
 };
 
-type NearbyAmenityKind = "subway" | "supermarket" | "park" | "gym";
+export type NearbyAmenityKind = "subway" | "supermarket" | "park" | "gym";
 
 export type NearbyAmenityInsight = {
   kind: NearbyAmenityKind;
@@ -40,7 +40,7 @@ export type NearbyAmenityInsight = {
   walkMinutes: number;
 };
 
-type ResolvedRecordLocation =
+export type ResolvedRecordLocation =
   | {
       latitude: number;
       longitude: number;
@@ -53,6 +53,13 @@ type ResolvedRecordLocation =
         | "api_unavailable"
         | "address_lookup_failed";
     };
+
+export type RoomLocationInsightSnapshot = {
+  amenityBasisNote: string | null;
+  amenityMessage: string | null;
+  nearbyAmenities: NearbyAmenityInsight[];
+  resolvedLocation: ResolvedRecordLocation;
+};
 
 const KAKAO_LOCAL_API_BASE_URL = "https://dapi.kakao.com/v2/local";
 const WALKING_METERS_PER_MINUTE = 67;
@@ -114,23 +121,27 @@ async function fetchKakaoLocal<TDocument>(
     return null;
   }
 
-  const response = await fetch(
-    `${KAKAO_LOCAL_API_BASE_URL}${path}?${searchParams.toString()}`,
-    {
-      headers: {
-        Authorization: `KakaoAK ${restApiKey}`,
+  try {
+    const response = await fetch(
+      `${KAKAO_LOCAL_API_BASE_URL}${path}?${searchParams.toString()}`,
+      {
+        headers: {
+          Authorization: `KakaoAK ${restApiKey}`,
+        },
+        next: {
+          revalidate: 60 * 60,
+        },
       },
-      next: {
-        revalidate: 60 * 60,
-      },
-    },
-  );
+    );
 
-  if (!response.ok) {
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as KakaoSearchResponse<TDocument>;
+  } catch {
     return null;
   }
-
-  return (await response.json()) as KakaoSearchResponse<TDocument>;
 }
 
 async function geocodeAddress(address: string) {
@@ -266,6 +277,43 @@ export async function resolveRecordLocation(record: RoomRecord): Promise<Resolve
   };
 }
 
+function getAmenityMessage(
+  resolvedLocation: ResolvedRecordLocation,
+  nearbyAmenities: NearbyAmenityInsight[],
+) {
+  if ("reason" in resolvedLocation) {
+    if (resolvedLocation.reason === "missing_location") {
+      return "주소나 좌표가 아직 없어 근처 생활권을 계산할 수 없습니다.";
+    }
+
+    if (resolvedLocation.reason === "address_needs_detail") {
+      return "근처 생활권을 계산하려면 주소를 도로명이나 번지까지 더 자세히 입력해 주세요.";
+    }
+
+    if (resolvedLocation.reason === "api_unavailable") {
+      return "KAKAO_REST_API_KEY를 설정하면 근처 지하철역, 마트, 공원, 헬스장 요약을 볼 수 있습니다.";
+    }
+
+    return "입력한 주소로 위치를 찾지 못했습니다. 주소를 더 정확히 적어 주세요.";
+  }
+
+  if (nearbyAmenities.length === 0) {
+    return "근처 생활권 정보를 찾지 못했습니다. 잠시 후 다시 시도하거나 주소를 더 정확히 입력해 주세요.";
+  }
+
+  return null;
+}
+
+function getAmenityBasisNote(resolvedLocation: ResolvedRecordLocation) {
+  if ("reason" in resolvedLocation) {
+    return null;
+  }
+
+  return resolvedLocation.source === "stored_coordinates"
+    ? "저장된 좌표 기준"
+    : "저장된 주소를 다시 좌표로 변환한 근사 기준";
+}
+
 export async function getNearbyAmenityInsights(
   latitude: number,
   longitude: number,
@@ -315,4 +363,24 @@ export async function getNearbyAmenityInsights(
   );
 
   return places.filter((place) => place !== null);
+}
+
+export async function getRoomLocationInsightSnapshot(
+  record: RoomRecord,
+): Promise<RoomLocationInsightSnapshot> {
+  const resolvedLocation = await resolveRecordLocation(record);
+  const nearbyAmenities =
+    "reason" in resolvedLocation
+      ? []
+      : await getNearbyAmenityInsights(
+          resolvedLocation.latitude,
+          resolvedLocation.longitude,
+        );
+
+  return {
+    amenityBasisNote: getAmenityBasisNote(resolvedLocation),
+    amenityMessage: getAmenityMessage(resolvedLocation, nearbyAmenities),
+    nearbyAmenities,
+    resolvedLocation,
+  };
 }
