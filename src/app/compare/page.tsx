@@ -56,6 +56,12 @@ type CompareSection = {
   fields: CompareField[];
 };
 
+type CompareSortOption =
+  | "selected"
+  | "monthly-rent-asc"
+  | "monthly-rent-desc"
+  | "subway-asc";
+
 type RecordWithInsight = {
   insight: RoomLocationInsightSnapshot;
   record: RoomRecord;
@@ -98,6 +104,16 @@ const amenityRows = [
   label: string;
 }>;
 
+const compareSortOptions = [
+  { label: "선택한 순서", value: "selected" },
+  { label: "월세 낮은 순", value: "monthly-rent-asc" },
+  { label: "월세 높은 순", value: "monthly-rent-desc" },
+  { label: "지하철역 가까운 순", value: "subway-asc" },
+] satisfies Array<{
+  label: string;
+  value: CompareSortOption;
+}>;
+
 function statusClassName(value: RoomCondition | null) {
   if (value === "good") {
     return "border-emerald-200 bg-emerald-100 text-emerald-900";
@@ -128,6 +144,26 @@ function formatCompareValue(field: CompareField, value: number | string | RoomCo
   }
 
   return "미입력";
+}
+
+function normalizeTextValue(value: string | null) {
+  const trimmed = value?.trim() ?? "";
+
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function getCompareValueSignature(field: CompareField, record: RoomRecord) {
+  const value = field.value(record);
+
+  if (field.kind === "money" || field.kind === "condition") {
+    return value ?? null;
+  }
+
+  if (typeof value === "string") {
+    return normalizeTextValue(value);
+  }
+
+  return null;
 }
 
 function getLocationStatusMeta(insight: RoomLocationInsightSnapshot) {
@@ -169,6 +205,162 @@ function formatWalkEstimate(minutes: number) {
   return `도보 추정 ${minutes}분`;
 }
 
+function parseSingleValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function isFlagEnabled(value: string | string[] | undefined) {
+  return parseSingleValue(value) === "1";
+}
+
+function parseSortOption(value: string | string[] | undefined): CompareSortOption {
+  const rawValue = parseSingleValue(value);
+
+  if (rawValue === "monthly-rent-asc") {
+    return rawValue;
+  }
+
+  if (rawValue === "monthly-rent-desc") {
+    return rawValue;
+  }
+
+  if (rawValue === "subway-asc") {
+    return rawValue;
+  }
+
+  return "selected";
+}
+
+function compareNullableNumbers(
+  first: number | null,
+  second: number | null,
+  direction: "asc" | "desc",
+) {
+  if (first === null && second === null) {
+    return 0;
+  }
+
+  if (first === null) {
+    return 1;
+  }
+
+  if (second === null) {
+    return -1;
+  }
+
+  return direction === "asc" ? first - second : second - first;
+}
+
+function getSubwaySortValue(recordWithInsight: RecordWithInsight) {
+  const subwayAmenity = findAmenity(recordWithInsight.insight, "subway");
+
+  return subwayAmenity?.distanceMeters ?? Number.POSITIVE_INFINITY;
+}
+
+function sortRecordsWithInsights(
+  recordsWithInsights: RecordWithInsight[],
+  sortOption: CompareSortOption,
+) {
+  if (sortOption === "selected") {
+    return recordsWithInsights;
+  }
+
+  return [...recordsWithInsights].sort((first, second) => {
+    if (sortOption === "monthly-rent-asc") {
+      return compareNullableNumbers(
+        first.record.monthly_rent,
+        second.record.monthly_rent,
+        "asc",
+      );
+    }
+
+    if (sortOption === "monthly-rent-desc") {
+      return compareNullableNumbers(
+        first.record.monthly_rent,
+        second.record.monthly_rent,
+        "desc",
+      );
+    }
+
+    return getSubwaySortValue(first) - getSubwaySortValue(second);
+  });
+}
+
+function shouldShowCompareField(
+  field: CompareField,
+  recordsWithInsights: RecordWithInsight[],
+  options: { differencesOnly: boolean; hideEmpty: boolean },
+) {
+  const signatures = recordsWithInsights.map(({ record }) =>
+    getCompareValueSignature(field, record),
+  );
+  const allMissing = signatures.every((signature) => signature === null);
+
+  if (options.hideEmpty && allMissing) {
+    return false;
+  }
+
+  if (!options.differencesOnly) {
+    return true;
+  }
+
+  return new Set(signatures.map((signature) => JSON.stringify(signature))).size > 1;
+}
+
+function getAmenitySignature(amenity: NearbyAmenityInsight | null) {
+  if (!amenity) {
+    return null;
+  }
+
+  return JSON.stringify({
+    address: amenity.primaryAddress,
+    distanceMeters: amenity.distanceMeters,
+    placeName: amenity.placeName,
+    walkMinutes: amenity.walkMinutes,
+  });
+}
+
+function shouldShowAmenityRow(
+  kind: NearbyAmenityKind,
+  recordsWithInsights: RecordWithInsight[],
+  options: { differencesOnly: boolean; hideEmpty: boolean },
+) {
+  const signatures = recordsWithInsights.map(({ insight }) =>
+    getAmenitySignature(findAmenity(insight, kind)),
+  );
+  const allMissing = signatures.every((signature) => signature === null);
+
+  if (options.hideEmpty && allMissing) {
+    return false;
+  }
+
+  if (!options.differencesOnly) {
+    return true;
+  }
+
+  return new Set(signatures).size > 1;
+}
+
+function shouldShowLocationStatusRow(
+  recordsWithInsights: RecordWithInsight[],
+  differencesOnly: boolean,
+) {
+  if (!differencesOnly) {
+    return true;
+  }
+
+  const signatures = recordsWithInsights.map(({ insight }) => {
+    const locationStatus = getLocationStatusMeta(insight);
+
+    return JSON.stringify({
+      detail: locationStatus.detail,
+      label: locationStatus.label,
+    });
+  });
+
+  return new Set(signatures).size > 1;
+}
+
 function renderAmenityCell(
   insight: RoomLocationInsightSnapshot,
   kind: NearbyAmenityKind,
@@ -201,14 +393,25 @@ function renderAmenityCell(
 
 type ComparePageProps = {
   searchParams: Promise<{
+    differencesOnly?: string | string[];
+    hideEmpty?: string | string[];
     ids?: string | string[];
+    sort?: string | string[];
   }>;
 };
 
 export default async function ComparePage({ searchParams }: ComparePageProps) {
   const user = await requireUser("/compare");
-  const { ids } = await searchParams;
+  const {
+    differencesOnly: differencesOnlyParam,
+    hideEmpty: hideEmptyParam,
+    ids,
+    sort: sortParam,
+  } = await searchParams;
   const selectedIds = parseRecordIds(ids);
+  const sortOption = parseSortOption(sortParam);
+  const differencesOnly = isFlagEnabled(differencesOnlyParam);
+  const hideEmpty = isFlagEnabled(hideEmptyParam);
   let records: RoomRecord[] = [];
   let recordsWithInsights: RecordWithInsight[] = [];
   let loadError = false;
@@ -230,7 +433,38 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
     }
   }
 
+  recordsWithInsights = sortRecordsWithInsights(recordsWithInsights, sortOption);
+  records = recordsWithInsights.map(({ record }) => record);
+
+  const visibleCompareSections = compareSections
+    .map((section) => ({
+      ...section,
+      fields: section.fields.filter((field) =>
+        shouldShowCompareField(field, recordsWithInsights, {
+          differencesOnly,
+          hideEmpty,
+        }),
+      ),
+    }))
+    .filter((section) => section.fields.length > 0);
+  const visibleAmenityRows = amenityRows.filter((amenityRow) =>
+    shouldShowAmenityRow(amenityRow.kind, recordsWithInsights, {
+      differencesOnly,
+      hideEmpty,
+    }),
+  );
+  const showLocationStatusRow = shouldShowLocationStatusRow(
+    recordsWithInsights,
+    differencesOnly,
+  );
+  const hasVisibleMatrixRows =
+    visibleCompareSections.length > 0 || visibleAmenityRows.length > 0 || showLocationStatusRow;
+
   const backHref = selectedIds.length > 0 ? `/rooms?${buildIdsSearchParams(selectedIds)}` : "/rooms";
+  const resetHref =
+    selectedIds.length > 0
+      ? `/compare?${buildIdsSearchParams(selectedIds)}`
+      : "/compare";
   const missingCount = Math.max(selectedIds.length - records.length, 0);
 
   return (
@@ -307,6 +541,92 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
             </Card>
           ) : (
             <>
+              <Card className={surfaceClassName}>
+                <CardHeader className="gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
+                        비교 보기 조절
+                      </CardTitle>
+                      <CardDescription className="mt-2 text-sm leading-6 text-muted-foreground">
+                        보고 싶은 기준만 남겨서 컬럼 순서와 비교 항목을 바로 바꿉니다.
+                      </CardDescription>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {sortOption !== "selected" ? (
+                        <Badge className="rounded-full" variant="secondary">
+                          {compareSortOptions.find((option) => option.value === sortOption)?.label}
+                        </Badge>
+                      ) : null}
+                      {differencesOnly ? (
+                        <Badge className="rounded-full" variant="secondary">
+                          차이만 보기
+                        </Badge>
+                      ) : null}
+                      {hideEmpty ? (
+                        <Badge className="rounded-full" variant="secondary">
+                          미입력 숨기기
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <form action="/compare" className="grid gap-4 lg:grid-cols-[1.2fr_auto]" method="get">
+                    {selectedIds.map((id) => (
+                      <input key={`compare-id-${id}`} name="ids" type="hidden" value={id} />
+                    ))}
+                    <div className="grid gap-4 md:grid-cols-[minmax(0,280px)_1fr]">
+                      <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="sort">
+                        정렬 기준
+                        <select
+                          className="h-12 rounded-[18px] border border-input bg-white/55 px-4 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                          defaultValue={sortOption}
+                          id="sort"
+                          name="sort"
+                        >
+                          {compareSortOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className="grid gap-3 rounded-[22px] border border-border/70 bg-white/45 p-4">
+                        <label className="flex items-center gap-3 text-sm text-foreground">
+                          <input
+                            className="h-4 w-4 accent-[var(--accent)]"
+                            defaultChecked={differencesOnly}
+                            name="differencesOnly"
+                            type="checkbox"
+                            value="1"
+                          />
+                          차이가 있는 항목만 보기
+                        </label>
+                        <label className="flex items-center gap-3 text-sm text-foreground">
+                          <input
+                            className="h-4 w-4 accent-[var(--accent)]"
+                            defaultChecked={hideEmpty}
+                            name="hideEmpty"
+                            type="checkbox"
+                            value="1"
+                          />
+                          모두 미입력인 항목 숨기기
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-end gap-2 lg:justify-end">
+                      <Button asChild className="rounded-full px-4" variant="outline">
+                        <Link href={resetHref}>초기화</Link>
+                      </Button>
+                      <Button className="rounded-full px-5" type="submit">
+                        보기 적용
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+
               <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
                 {recordsWithInsights.map(({ insight, record }) => {
                   const locationStatus = getLocationStatusMeta(insight);
@@ -406,103 +726,114 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                     ) : null}
 
                     <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-border/80 hover:bg-transparent">
-                            <TableHead className="w-40 text-muted-foreground">항목</TableHead>
-                            {records.map((record) => (
-                              <TableHead key={record.id}>{getRoomRecordName(record)}</TableHead>
+                      {hasVisibleMatrixRows ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-border/80 hover:bg-transparent">
+                              <TableHead className="w-40 text-muted-foreground">항목</TableHead>
+                              {records.map((record) => (
+                                <TableHead key={record.id}>{getRoomRecordName(record)}</TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {visibleCompareSections.map((section) => (
+                              <Fragment key={section.label}>
+                                <TableRow className="border-border/70 bg-white/30 hover:bg-white/30">
+                                  <TableCell
+                                    className="font-serif text-lg tracking-[-0.02em] text-foreground"
+                                    colSpan={records.length + 1}
+                                  >
+                                    {section.label}
+                                  </TableCell>
+                                </TableRow>
+                                {section.fields.map((field) => (
+                                  <TableRow
+                                    className="border-border/70 hover:bg-white/30"
+                                    key={field.label}
+                                  >
+                                    <TableCell className="font-medium text-foreground">
+                                      {field.label}
+                                    </TableCell>
+                                    {records.map((record) => {
+                                      const value = field.value(record);
+                                      const text = formatCompareValue(field, value);
+
+                                      return (
+                                        <TableCell key={`${field.label}-${record.id}`}>
+                                          <Badge
+                                            className={`rounded-full border ${field.kind === "condition" ? statusClassName(value as RoomCondition | null) : "border-border bg-background text-foreground"}`}
+                                            variant="outline"
+                                          >
+                                            {text}
+                                          </Badge>
+                                        </TableCell>
+                                      );
+                                    })}
+                                  </TableRow>
+                                ))}
+                              </Fragment>
                             ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {compareSections.map((section) => (
-                            <Fragment key={section.label}>
+
+                            {(showLocationStatusRow || visibleAmenityRows.length > 0) ? (
                               <TableRow className="border-border/70 bg-white/30 hover:bg-white/30">
                                 <TableCell
                                   className="font-serif text-lg tracking-[-0.02em] text-foreground"
                                   colSpan={records.length + 1}
                                 >
-                                  {section.label}
+                                  생활권
                                 </TableCell>
                               </TableRow>
-                              {section.fields.map((field) => (
-                                <TableRow
-                                  className="border-border/70 hover:bg-white/30"
-                                  key={field.label}
-                                >
-                                  <TableCell className="font-medium text-foreground">
-                                    {field.label}
-                                  </TableCell>
-                                  {records.map((record) => {
-                                    const value = field.value(record);
-                                    const text = formatCompareValue(field, value);
+                            ) : null}
 
-                                    return (
-                                      <TableCell key={`${field.label}-${record.id}`}>
+                            {showLocationStatusRow ? (
+                              <TableRow className="border-border/70 hover:bg-white/30">
+                                <TableCell className="font-medium text-foreground">위치 기준</TableCell>
+                                {recordsWithInsights.map(({ insight, record }) => {
+                                  const locationStatus = getLocationStatusMeta(insight);
+
+                                  return (
+                                    <TableCell key={`location-status-${record.id}`}>
+                                      <div className="space-y-2">
                                         <Badge
-                                          className={`rounded-full border ${field.kind === "condition" ? statusClassName(value as RoomCondition | null) : "border-border bg-background text-foreground"}`}
+                                          className={`rounded-full border ${locationStatus.className}`}
                                           variant="outline"
                                         >
-                                          {text}
+                                          {locationStatus.label}
                                         </Badge>
-                                      </TableCell>
-                                    );
-                                  })}
-                                </TableRow>
-                              ))}
-                            </Fragment>
-                          ))}
+                                        <p className="text-sm leading-6 text-muted-foreground">
+                                          {locationStatus.detail}
+                                        </p>
+                                      </div>
+                                    </TableCell>
+                                  );
+                                })}
+                              </TableRow>
+                            ) : null}
 
-                          <TableRow className="border-border/70 bg-white/30 hover:bg-white/30">
-                            <TableCell
-                              className="font-serif text-lg tracking-[-0.02em] text-foreground"
-                              colSpan={records.length + 1}
-                            >
-                              생활권
-                            </TableCell>
-                          </TableRow>
-
-                          <TableRow className="border-border/70 hover:bg-white/30">
-                            <TableCell className="font-medium text-foreground">위치 기준</TableCell>
-                            {recordsWithInsights.map(({ insight, record }) => {
-                              const locationStatus = getLocationStatusMeta(insight);
-
-                              return (
-                                <TableCell key={`location-status-${record.id}`}>
-                                  <div className="space-y-2">
-                                    <Badge
-                                      className={`rounded-full border ${locationStatus.className}`}
-                                      variant="outline"
-                                    >
-                                      {locationStatus.label}
-                                    </Badge>
-                                    <p className="text-sm leading-6 text-muted-foreground">
-                                      {locationStatus.detail}
-                                    </p>
-                                  </div>
+                            {visibleAmenityRows.map((amenityRow) => (
+                              <TableRow
+                                className="border-border/70 hover:bg-white/30"
+                                key={`amenity-${amenityRow.kind}`}
+                              >
+                                <TableCell className="font-medium text-foreground">
+                                  {amenityRow.label}
                                 </TableCell>
-                              );
-                            })}
-                          </TableRow>
-
-                          {amenityRows.map((amenityRow) => (
-                            <TableRow
-                              className="border-border/70 hover:bg-white/30"
-                              key={`amenity-${amenityRow.kind}`}
-                            >
-                              <TableCell className="font-medium text-foreground">
-                                {amenityRow.label}
-                              </TableCell>
-                              {recordsWithInsights.map(({ insight, record }) => (
-                                <TableCell key={`${amenityRow.kind}-${record.id}`}>
-                                  {renderAmenityCell(insight, amenityRow.kind)}
-                                </TableCell>
-                              ))}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                                {recordsWithInsights.map(({ insight, record }) => (
+                                  <TableCell key={`${amenityRow.kind}-${record.id}`}>
+                                    {renderAmenityCell(insight, amenityRow.kind)}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <div className="rounded-[20px] border border-border/70 bg-white/45 p-5 text-sm leading-6 text-muted-foreground">
+                          현재 필터 조건에서는 보여줄 비교 항목이 없습니다. 차이만 보기 또는
+                          미입력 숨기기를 해제해 주세요.
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -529,7 +860,7 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                       <CardTitle className="font-serif text-2xl">기록 메모</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {records.map((record) => (
+                      {recordsWithInsights.map(({ record }) => (
                         <div
                           className="rounded-[20px] border border-border/70 bg-white/45 p-4"
                           key={`note-${record.id}`}
