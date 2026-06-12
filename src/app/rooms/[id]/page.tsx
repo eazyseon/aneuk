@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { deleteRoomRecord, updateRoomRecord } from "@/app/rooms/[id]/actions";
+import { RoomLocationPreviewMap } from "@/components/rooms/room-location-preview-map";
 import { RoomRecordActionForm } from "@/components/rooms/room-record-action-form";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { DeleteRoomRecordButton } from "@/components/rooms/delete-room-record-button";
@@ -91,8 +92,19 @@ export default async function RoomDetailPage({
     );
   }
 
-  const { amenityBasisNote, amenityMessage, nearbyAmenities } =
+  const { amenityBasisNote, amenityMessage, nearbyAmenities, resolvedLocation } =
     await getRoomLocationInsightSnapshot(record);
+  const previewLocation =
+    "reason" in resolvedLocation
+      ? null
+      : {
+          latitude: resolvedLocation.latitude,
+          locationBasisLabel:
+            resolvedLocation.source === "stored_coordinates"
+              ? "좌표 확정"
+              : "주소 기반 근사",
+          longitude: resolvedLocation.longitude,
+        };
 
   return (
     <div className="aneuk-shell">
@@ -156,6 +168,36 @@ export default async function RoomDetailPage({
           </Card>
 
           <aside className="grid gap-4">
+            <Card className={surfaceClassName}>
+              <CardHeader className="gap-3">
+                <Badge className="rounded-full" variant="outline">
+                  위치 미리보기
+                </Badge>
+                <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
+                  저장된 위치를 다시 확인
+                </CardTitle>
+                <CardDescription className="text-sm leading-6 text-muted-foreground">
+                  수정 폼에서 확정한 좌표가 있으면 바로 지도에 표시하고, 없으면 주소 기반
+                  위치 확인이 왜 어려운지 안내합니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {previewLocation ? (
+                  <RoomLocationPreviewMap
+                    address={record.address}
+                    latitude={previewLocation.latitude}
+                    locationBasisLabel={previewLocation.locationBasisLabel}
+                    longitude={previewLocation.longitude}
+                  />
+                ) : (
+                  <div className="rounded-[20px] border border-border/70 bg-white/45 p-4 text-sm leading-6 text-muted-foreground">
+                    {amenityMessage ??
+                      "위치를 더 정확히 저장하면 여기에서 집 위치 미리보기를 바로 확인할 수 있습니다."}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card className={surfaceClassName}>
               <CardHeader className="gap-3">
                 <Badge className="rounded-full" variant="outline">
