@@ -165,6 +165,10 @@ function formatAmenityDistance(amenity: NearbyAmenityInsight) {
   return `${amenity.distanceMeters.toLocaleString("ko-KR")}m`;
 }
 
+function formatWalkEstimate(minutes: number) {
+  return `도보 추정 ${minutes}분`;
+}
+
 function renderAmenityCell(
   insight: RoomLocationInsightSnapshot,
   kind: NearbyAmenityKind,
@@ -184,7 +188,7 @@ function renderAmenityCell(
       <p className="font-medium text-foreground">{amenity.placeName}</p>
       <div className="flex flex-wrap gap-2">
         <Badge className="rounded-full" variant="secondary">
-          도보 약 {amenity.walkMinutes}분
+          {formatWalkEstimate(amenity.walkMinutes)}
         </Badge>
         <Badge className="rounded-full" variant="outline">
           {formatAmenityDistance(amenity)}
@@ -357,7 +361,7 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                                     </div>
                                     <Badge className="rounded-full" variant="secondary">
                                       {amenity
-                                        ? `도보 약 ${amenity.walkMinutes}분`
+                                        ? formatWalkEstimate(amenity.walkMinutes)
                                         : "계산 불가"}
                                     </Badge>
                                   </div>
@@ -515,7 +519,7 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
                       <p>총점 계산이나 자동 추천은 의도적으로 넣지 않았습니다.</p>
-                      <p>생활권 도보 시간은 현재 직선거리 기준 추정값이고, 다음 단계에서 실제 보행 경로로 바꿀 수 있습니다.</p>
+                      <p>생활권 시간은 현재 직선거리 기준의 도보 추정값이고, 다음 단계에서 실제 보행 경로로 바꿀 수 있습니다.</p>
                       <p>좌표가 없는 기록은 주소 기반 근사 좌표 또는 위치 보완 필요 상태로 표시합니다.</p>
                     </CardContent>
                   </Card>

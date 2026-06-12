@@ -189,7 +189,7 @@ export default async function RoomDetailPage({
                   이 위치에서 가까운 생활 편의
                 </CardTitle>
                 <CardDescription className="text-sm leading-6 text-muted-foreground">
-                  카카오 Local API 거리값 기준 직선거리와 도보 예상 시간을 함께 표시합니다.
+                  카카오 Local API 거리값 기준 직선거리와 도보 추정 시간을 함께 표시합니다.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3">
@@ -216,7 +216,7 @@ export default async function RoomDetailPage({
                           </p>
                         </div>
                         <Badge className="rounded-full" variant="secondary">
-                          도보 약 {amenity.walkMinutes}분
+                          도보 추정 {amenity.walkMinutes}분
                         </Badge>
                       </div>
                       <p className="mt-3 text-sm leading-6 text-muted-foreground">
