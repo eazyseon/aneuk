@@ -33,8 +33,7 @@ const principles = [
   },
 ];
 
-const surfaceClassName =
-  "rounded-[28px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,252,246,0.95),rgba(255,249,240,0.82))] shadow-[var(--shadow)] backdrop-blur-sm";
+const surfaceClassName = "aneuk-surface";
 
 export default async function NewRoomPage() {
   await requireUser("/rooms/new");
@@ -56,18 +55,19 @@ export default async function NewRoomPage() {
         </nav>
 
         <section className="aneuk-content grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
-            <Card className={surfaceClassName}>
+          <Card className={surfaceClassName}>
             <CardHeader className="gap-4">
               <Badge className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[#8c4e28]">
                 quick room form
               </Badge>
               <div className="space-y-3">
                 <CardTitle className="font-serif text-4xl leading-[0.98] tracking-[-0.04em] md:text-6xl">
-                  현장에서 바로 남길 수 있는 최소 입력 폼
+                  본 집의 느낌을 현장에서 바로 붙잡는 기록 폼
                 </CardTitle>
                 <CardDescription className="max-w-2xl text-base leading-7 text-muted-foreground md:text-[1.05rem]">
-                  실제 구현에서는 `방문일`과 `동네명`만 필수로 두고, 별칭은
-                  비워두면 자동 생성되도록 연결합니다.
+                  방문일과 동네명만 먼저 적고 나머지는 아는 만큼만 채워도 됩니다.
+                  주소는 검색과 핀 선택으로 정확히 잡아두고, 나중에 비교 기준은 다시
+                  천천히 보완하는 흐름에 맞춘 입력 화면입니다.
                 </CardDescription>
               </div>
             </CardHeader>
@@ -79,8 +79,8 @@ export default async function NewRoomPage() {
                 footerBadge="비어 있는 값은 나중에 다시 입력 가능"
                 helperText={
                   <>
-                    주소 검색이나 지도 클릭으로 위치를 먼저 확정해 두면, 저장 후 상세 화면에서
-                    근처 지하철역, 마트, 공원, 헬스장 요약까지 바로 이어서 볼 수 있습니다.
+                    지도에서 집 위치를 먼저 정확히 잡아 두면, 저장 직후 상세 화면에서
+                    근처 지하철역, 마트, 공원, 헬스장까지 한 번에 이어서 확인할 수 있습니다.
                   </>
                 }
                 submitIdleLabel="기록 저장하기"
@@ -96,7 +96,7 @@ export default async function NewRoomPage() {
                   v1 입력 원칙
                 </Badge>
                 <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
-                  입력 부담을 줄이는 기준
+                  입력을 오래 붙잡지 않는 기준
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-3">
@@ -108,9 +108,9 @@ export default async function NewRoomPage() {
                   >
                     <CardHeader className="gap-2">
                       <CardTitle className="text-base">{principle.title}</CardTitle>
-                  <CardDescription className="text-sm leading-6 text-muted-foreground">
-                    {principle.description}
-                  </CardDescription>
+                      <CardDescription className="text-sm leading-6 text-muted-foreground">
+                        {principle.description}
+                      </CardDescription>
                     </CardHeader>
                   </Card>
                 ))}
@@ -121,8 +121,8 @@ export default async function NewRoomPage() {
               <CardHeader className="gap-2">
                 <CardTitle className="font-serif text-2xl">지도 입력 방식</CardTitle>
                 <CardDescription className="text-sm leading-6 text-muted-foreground">
-                  주소 검색으로 먼저 위치를 찾고, 핀을 드래그하거나 지도를 눌러 실제로 보려는
-                  집 위치를 더 세밀하게 맞춥니다.
+                  주소 검색으로 대략 위치를 잡고, 핀을 드래그하거나 지도를 눌러 실제로
+                  보려는 건물 위치에 가깝게 미세 조정합니다.
                 </CardDescription>
               </CardHeader>
             </Card>

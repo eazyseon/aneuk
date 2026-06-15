@@ -5,36 +5,36 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --panel: rgba(255, 252, 246, 0.82);
-  --panel-strong: #fffaf2;
-  --line: rgba(79, 59, 41, 0.12);
-  --muted: #efe6d9;
-  --muted-foreground: #70614f;
-  --accent: #f5eadc;
+  --panel: rgba(252, 248, 241, 0.84);
+  --panel-strong: #fffdf8;
+  --line: rgba(72, 55, 42, 0.11);
+  --muted: #efe7da;
+  --muted-foreground: #6d6154;
+  --accent: #f0e5d5;
   --accent-foreground: #1f1c19;
-  --accent-soft: rgba(182, 106, 60, 0.14);
-  --shadow: 0 24px 60px rgba(89, 63, 42, 0.12);
+  --accent-soft: rgba(155, 97, 59, 0.12);
+  --shadow: 0 28px 80px rgba(63, 45, 31, 0.12);
   --font-sans: "Avenir Next", "Pretendard", "Segoe UI", sans-serif;
   --font-serif: "Iowan Old Style", "Palatino Linotype", "Noto Serif KR", serif;
-  --background: #f4efe6;
-  --foreground: #1f1c19;
-  --card: #fffaf2;
+  --background: #f2eadc;
+  --foreground: #201b17;
+  --card: #fffbf5;
   --card-foreground: #1f1c19;
-  --popover: #fffaf2;
+  --popover: #fffbf5;
   --popover-foreground: #1f1c19;
-  --primary: #2c241e;
+  --primary: #2e251f;
   --primary-foreground: #fff9f2;
-  --secondary: #f8f1e7;
+  --secondary: #f5ede1;
   --secondary-foreground: #1f1c19;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: rgba(79, 59, 41, 0.12);
-  --input: rgba(79, 59, 41, 0.18);
-  --ring: rgba(182, 106, 60, 0.28);
-  --chart-1: #c98962;
-  --chart-2: #8d5b3a;
+  --border: rgba(72, 55, 42, 0.12);
+  --input: rgba(72, 55, 42, 0.18);
+  --ring: rgba(155, 97, 59, 0.24);
+  --chart-1: #ba7d56;
+  --chart-2: #75523a;
   --chart-3: #6f6558;
-  --chart-4: #c7b39a;
-  --chart-5: #41342b;
+  --chart-4: #cab59a;
+  --chart-5: #3e3128;
   --radius: 0.625rem;
   --sidebar: #fffaf2;
   --sidebar-foreground: #1f1c19;
@@ -102,10 +102,25 @@ body {
   margin: 0;
   color: var(--foreground);
   font-family: var(--font-sans);
+  position: relative;
+  overflow-x: hidden;
   background-image:
-    radial-gradient(circle at top left, rgba(224, 186, 154, 0.45), transparent 30%),
-    radial-gradient(circle at 85% 20%, rgba(217, 207, 188, 0.7), transparent 28%),
-    linear-gradient(180deg, #f8f3ea 0%, #f4efe6 42%, #efe8dc 100%);
+    radial-gradient(circle at top left, rgba(214, 165, 128, 0.38), transparent 24%),
+    radial-gradient(circle at 88% 18%, rgba(201, 192, 173, 0.72), transparent 20%),
+    linear-gradient(180deg, #f7f0e5 0%, #f2eadc 44%, #ebe2d4 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    linear-gradient(rgba(109, 97, 84, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(109, 97, 84, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 85%);
 }
 
 a {
@@ -123,18 +138,40 @@ main {
 
 .aneuk-shell {
   min-height: 100vh;
-  padding: 32px 20px 56px;
+  padding: 34px 22px 64px;
 }
 
 .aneuk-frame {
+  position: relative;
   margin: 0 auto;
-  max-width: 1120px;
+  max-width: 1200px;
   border: 1px solid var(--line);
-  border-radius: 32px;
-  background: linear-gradient(180deg, rgba(255, 252, 246, 0.92), rgba(255, 249, 240, 0.76));
+  border-radius: 36px;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.96), rgba(249, 242, 231, 0.84)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0));
   box-shadow: var(--shadow);
   overflow: hidden;
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(24px);
+}
+
+.aneuk-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.75), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 28%);
+}
+
+.aneuk-frame::after {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border-radius: 28px;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .aneuk-nav {
@@ -143,19 +180,26 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 22px 24px;
-  border-bottom: 1px solid var(--line);
+  padding: 24px 28px;
+  border-bottom: 1px solid rgba(72, 55, 42, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.08));
 }
 
 .aneuk-brand {
   display: grid;
-  gap: 2px;
+  gap: 4px;
+}
+
+.aneuk-brand strong {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  letter-spacing: -0.04em;
 }
 
 .aneuk-eyebrow {
   color: var(--muted-foreground);
   font-size: 0.72rem;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
 }
 
@@ -210,7 +254,19 @@ main {
 }
 
 .aneuk-content {
-  padding: 28px 24px 36px;
+  padding: 34px 28px 44px;
+}
+
+.aneuk-surface {
+  border: 1px solid rgba(72, 55, 42, 0.08);
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 249, 0.96), rgba(252, 247, 239, 0.82)),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.68), transparent 40%);
+  box-shadow:
+    0 18px 42px rgba(67, 49, 34, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(18px);
 }
 
 .aneuk-grid {
@@ -413,6 +469,10 @@ main {
   .aneuk-nav,
   .aneuk-content {
     padding-inline: 16px;
+  }
+
+  .aneuk-frame::after {
+    inset: 10px;
   }
 }
 

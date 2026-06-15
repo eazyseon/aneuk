@@ -42,8 +42,7 @@ export const metadata = {
   title: "비교",
 };
 
-const surfaceClassName =
-  "rounded-[28px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,252,246,0.95),rgba(255,249,240,0.82))] shadow-[var(--shadow)] backdrop-blur-sm";
+const surfaceClassName = "aneuk-surface";
 
 type CompareField = {
   label: string;

@@ -52,6 +52,7 @@ export function RoomLocationPickerField({
       : "주소 검색 또는 지도 클릭으로 위치를 확정해 주세요.",
   );
   const [sdkState, setSdkState] = useState<KakaoSdkState>({ status: "loading" });
+  const [sdkAttempt, setSdkAttempt] = useState(0);
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<KakaoMap | null>(null);
@@ -80,7 +81,7 @@ export function RoomLocationPickerField({
     return () => {
       active = false;
     };
-  }, []);
+  }, [sdkAttempt]);
 
   useEffect(() => {
     if (sdkState.status !== "ready" || !mapContainerRef.current || mapRef.current) {
@@ -273,9 +274,32 @@ export function RoomLocationPickerField({
           {sdkState.status !== "ready" ? (
             <div className="absolute inset-0 grid place-items-center bg-white/60 backdrop-blur-sm">
               <div className="max-w-xs text-center text-sm leading-6 text-muted-foreground">
-                {sdkState.status === "error"
-                  ? "카카오 지도를 불러오지 못했습니다. 사이트 도메인 등록과 JavaScript 키를 확인해 주세요."
-                  : "카카오 지도를 불러오는 중입니다."}
+                {sdkState.status === "error" ? (
+                  <div className="grid gap-3">
+                    <p>카카오 지도를 불러오지 못했습니다.</p>
+                    <p className="text-xs leading-5 text-muted-foreground/90">
+                      {sdkState.message}
+                    </p>
+                    <p className="text-xs leading-5 text-muted-foreground/90">
+                      JavaScript 키와 Kakao 사이트 도메인 등록을 먼저 확인해 주세요.
+                    </p>
+                    <div className="flex justify-center">
+                      <Button
+                        className="rounded-full px-4"
+                        onClick={() => {
+                          setSdkState({ status: "loading" });
+                          setSdkAttempt((current) => current + 1);
+                        }}
+                        type="button"
+                        variant="outline"
+                      >
+                        다시 시도
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  "카카오 지도를 불러오는 중입니다."
+                )}
               </div>
             </div>
           ) : null}

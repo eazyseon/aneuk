@@ -108,49 +108,83 @@ export function loadKakaoMapsSdk() {
   }
 
   kakaoSdkPromise = new Promise((resolve, reject) => {
-    const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[data-kakao-maps-sdk="true"]',
-    );
+    let settled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      kakaoSdkPromise = null;
+      reject(
+        new Error(
+          "Kakao Maps SDK load timed out. Check the JavaScript key and registered site domain.",
+        ),
+      );
+    }, 10000);
+
+    const finishReject = (message: string) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      window.clearTimeout(timeoutId);
+      kakaoSdkPromise = null;
+      reject(new Error(message));
+    };
+
+    const finishResolve = (kakao: KakaoSdk) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      window.clearTimeout(timeoutId);
+      resolve(kakao);
+    };
 
     const handleLoad = () => {
       const kakao = window.kakao;
 
       if (!kakao?.maps?.load) {
-        reject(new Error("Kakao Maps SDK did not load correctly."));
+        finishReject("Kakao Maps SDK did not load correctly.");
         return;
       }
 
       kakao.maps.load(() => {
-        resolve(kakao);
+        finishResolve(kakao);
       });
     };
 
-    if (existingScript) {
-      if (window.kakao?.maps) {
-        handleLoad();
-      } else {
-        existingScript.addEventListener("load", handleLoad, { once: true });
-        existingScript.addEventListener(
-          "error",
-          () => reject(new Error("Failed to load Kakao Maps SDK.")),
-          { once: true },
-        );
-      }
+    const createScript = () => {
+      const script = document.createElement("script");
+      script.async = true;
+      script.dataset.kakaoMapsSdk = "true";
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${javascriptKey}&autoload=false&libraries=services`;
+      script.addEventListener("load", handleLoad, { once: true });
+      script.addEventListener(
+        "error",
+        () => finishReject("Failed to load Kakao Maps SDK."),
+        { once: true },
+      );
+      document.head.append(script);
+    };
 
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[data-kakao-maps-sdk="true"]',
+    );
+
+    if (window.kakao?.maps) {
+      handleLoad();
       return;
     }
 
-    const script = document.createElement("script");
-    script.async = true;
-    script.dataset.kakaoMapsSdk = "true";
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${javascriptKey}&autoload=false&libraries=services`;
-    script.addEventListener("load", handleLoad, { once: true });
-    script.addEventListener(
-      "error",
-      () => reject(new Error("Failed to load Kakao Maps SDK.")),
-      { once: true },
-    );
-    document.head.append(script);
+    if (existingScript) {
+      existingScript.remove();
+    }
+
+    createScript();
   });
 
   return kakaoSdkPromise;

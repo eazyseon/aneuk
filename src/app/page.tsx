@@ -14,33 +14,32 @@ const routes = [
   {
     href: "/login",
     label: "/login",
-    description: "Google 로그인 진입 화면",
+    description: "Google 로그인과 세션 복귀 흐름",
   },
   {
     href: "/rooms",
     label: "/rooms",
-    description: "내 방 기록 목록과 비교 진입",
+    description: "내 기록 목록, 비교 큐, 최근 방문 흐름",
   },
   {
     href: "/rooms/new",
     label: "/rooms/new",
-    description: "새 방 기록 작성 폼",
+    description: "주소 검색과 지도 핀 선택이 있는 입력 폼",
   },
   {
     href: "/compare",
     label: "/compare",
-    description: "선택한 방들을 같은 기준으로 비교",
+    description: "생활권까지 포함한 정렬·필터 비교 화면",
   },
 ];
 
 const highlights = [
-  { label: "v1 범위", value: "로그인 + 기록 + 비교" },
-  { label: "입력 원칙", value: "부분 입력 허용" },
-  { label: "기록 단위", value: "월세 기준" },
+  { label: "기록 방식", value: "현장 감각 저장" },
+  { label: "위치 입력", value: "지도 핀 확정" },
+  { label: "비교 기준", value: "가격 + 생활권" },
 ];
 
-const surfaceClassName =
-  "rounded-[28px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,252,246,0.95),rgba(255,249,240,0.82))] shadow-[var(--shadow)] backdrop-blur-sm";
+const surfaceClassName = "aneuk-surface";
 
 export default function Home() {
   return (
@@ -68,16 +67,16 @@ export default function Home() {
           <Card className={surfaceClassName}>
             <CardHeader className="gap-5">
               <Badge className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[#8c4e28]">
-                현장에서 빠르게, 집에 와서 차분하게
+                apartment field journal
               </Badge>
               <div className="space-y-4">
                 <CardTitle className="font-serif text-4xl leading-[0.96] tracking-[-0.04em] md:text-6xl">
-                  내가 본 방을 잊지 않게 남기는 기록 습관
+                  하루에 본 집들을 감으로만 넘기지 않게 붙잡아 두는 기록 도구
                 </CardTitle>
                 <CardDescription className="max-w-2xl text-base leading-7 text-muted-foreground md:text-[1.05rem]">
-                  아늑은 자취방을 둘러볼 때 놓치기 쉬운 수압, 습기, 채광, 소음
-                  같은 현장 감각을 정리하고 같은 기준으로 비교하기 위한 개인용
-                  앱입니다.
+                  아늑은 자취방을 볼 때 남기는 수압, 채광, 소음, 위치, 생활권 같은
+                  현장 메모를 한곳에 모으고, 집에 돌아와 같은 눈금으로 다시 비교하는
+                  개인용 기록 앱입니다.
                 </CardDescription>
               </div>
             </CardHeader>
@@ -104,13 +103,14 @@ export default function Home() {
           <Card className={surfaceClassName}>
             <CardHeader className="gap-3">
               <Badge className="rounded-full" variant="outline">
-                준비된 라우트
+                실제로 되는 흐름
               </Badge>
               <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
-                지금 둘러볼 수 있는 화면
+                로그인부터 비교까지 바로 이어집니다
               </CardTitle>
               <CardDescription className="text-base leading-7 text-muted-foreground">
-                다음 단계부터는 이 뼈대 위에 인증과 실제 데이터를 연결합니다.
+                지금은 목업 단계가 아니라, 실제 저장과 지도 입력, 생활권 비교까지
+                한 흐름으로 움직입니다.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
