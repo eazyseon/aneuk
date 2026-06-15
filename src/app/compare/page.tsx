@@ -204,6 +204,41 @@ function formatWalkEstimate(minutes: number) {
   return `도보 추정 ${minutes}분`;
 }
 
+function getNotePreview(note: string | null, maxLength = 108) {
+  if (!note) {
+    return "남겨둔 메모가 아직 없습니다.";
+  }
+
+  return note.length > maxLength ? `${note.slice(0, maxLength).trimEnd()}...` : note;
+}
+
+function getLowestMonthlyRent(recordsWithInsights: RecordWithInsight[]) {
+  const values = recordsWithInsights
+    .map(({ record }) => record.monthly_rent)
+    .filter((value): value is number => value !== null);
+
+  if (values.length === 0) {
+    return null;
+  }
+
+  return Math.min(...values);
+}
+
+function getClosestAmenityWalkMinutes(
+  recordsWithInsights: RecordWithInsight[],
+  kind: NearbyAmenityKind,
+) {
+  const values = recordsWithInsights
+    .map(({ insight }) => findAmenity(insight, kind)?.walkMinutes ?? null)
+    .filter((value): value is number => value !== null);
+
+  if (values.length === 0) {
+    return null;
+  }
+
+  return Math.min(...values);
+}
+
 function parseSingleValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -458,6 +493,12 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
   );
   const hasVisibleMatrixRows =
     visibleCompareSections.length > 0 || visibleAmenityRows.length > 0 || showLocationStatusRow;
+  const lowestMonthlyRent = getLowestMonthlyRent(recordsWithInsights);
+  const closestSubwayWalkMinutes = getClosestAmenityWalkMinutes(
+    recordsWithInsights,
+    "subway",
+  );
+  const activeFilterCount = Number(differencesOnly) + Number(hideEmpty);
 
   const backHref = selectedIds.length > 0 ? `/rooms?${buildIdsSearchParams(selectedIds)}` : "/rooms";
   const resetHref =
@@ -498,6 +539,40 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                 </CardDescription>
               </div>
             </CardHeader>
+            <CardContent className="grid gap-3 md:grid-cols-3">
+              <Card className="rounded-[22px] border-border/70 bg-white/50 shadow-none" size="sm">
+                <CardHeader className="gap-2">
+                  <CardDescription className="text-[0.78rem] uppercase tracking-[0.18em] text-muted-foreground">
+                    비교 중인 기록
+                  </CardDescription>
+                  <CardTitle className="font-serif text-2xl leading-tight">
+                    {records.length}개
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+              <Card className="rounded-[22px] border-border/70 bg-white/50 shadow-none" size="sm">
+                <CardHeader className="gap-2">
+                  <CardDescription className="text-[0.78rem] uppercase tracking-[0.18em] text-muted-foreground">
+                    가장 낮은 월세
+                  </CardDescription>
+                  <CardTitle className="font-serif text-2xl leading-tight">
+                    {formatCurrencyInManwon(lowestMonthlyRent)}
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+              <Card className="rounded-[22px] border-border/70 bg-white/50 shadow-none" size="sm">
+                <CardHeader className="gap-2">
+                  <CardDescription className="text-[0.78rem] uppercase tracking-[0.18em] text-muted-foreground">
+                    가장 가까운 지하철
+                  </CardDescription>
+                  <CardTitle className="font-serif text-2xl leading-tight">
+                    {closestSubwayWalkMinutes !== null
+                      ? formatWalkEstimate(closestSubwayWalkMinutes)
+                      : "계산 대기"}
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            </CardContent>
           </Card>
 
           {loadError ? (
@@ -552,6 +627,9 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                       </CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      <Badge className="rounded-full" variant="outline">
+                        필터 {activeFilterCount}개
+                      </Badge>
                       {sortOption !== "selected" ? (
                         <Badge className="rounded-full" variant="secondary">
                           {compareSortOptions.find((option) => option.value === sortOption)?.label}
@@ -571,11 +649,11 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <form action="/compare" className="grid gap-4 lg:grid-cols-[1.2fr_auto]" method="get">
+                  <form action="/compare" className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_auto]" method="get">
                     {selectedIds.map((id) => (
                       <input key={`compare-id-${id}`} name="ids" type="hidden" value={id} />
                     ))}
-                    <div className="grid gap-4 md:grid-cols-[minmax(0,280px)_1fr]">
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,260px)_1fr]">
                       <label className="grid gap-2 text-sm text-muted-foreground" htmlFor="sort">
                         정렬 기준
                         <select
@@ -591,8 +669,8 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                           ))}
                         </select>
                       </label>
-                      <div className="grid gap-3 rounded-[22px] border border-border/70 bg-white/45 p-4">
-                        <label className="flex items-center gap-3 text-sm text-foreground">
+                      <div className="grid gap-3 rounded-[22px] border border-border/70 bg-white/45 p-4 sm:grid-cols-2">
+                        <label className="flex items-center gap-3 rounded-[16px] border border-border/70 bg-white/60 px-4 py-3 text-sm text-foreground">
                           <input
                             className="h-4 w-4 accent-[var(--accent)]"
                             defaultChecked={differencesOnly}
@@ -602,7 +680,7 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                           />
                           차이가 있는 항목만 보기
                         </label>
-                        <label className="flex items-center gap-3 text-sm text-foreground">
+                        <label className="flex items-center gap-3 rounded-[16px] border border-border/70 bg-white/60 px-4 py-3 text-sm text-foreground">
                           <input
                             className="h-4 w-4 accent-[var(--accent)]"
                             defaultChecked={hideEmpty}
@@ -631,16 +709,29 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                   const locationStatus = getLocationStatusMeta(insight);
 
                   return (
-                    <Card className={surfaceClassName} key={`summary-${record.id}`}>
+                    <Card
+                      className={`${surfaceClassName} transition-transform duration-200 hover:-translate-y-0.5`}
+                      key={`summary-${record.id}`}
+                    >
                       <CardHeader className="gap-3">
                         <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="space-y-2">
-                            <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
-                              {getRoomRecordName(record)}
-                            </CardTitle>
-                            <CardDescription className="text-sm leading-6 text-muted-foreground">
-                              {record.address ?? `${record.district_name} · 주소 미입력`}
-                            </CardDescription>
+                          <div className="min-w-0 flex-1 space-y-3">
+                            <div className="space-y-2">
+                              <CardTitle className="font-serif text-3xl tracking-[-0.03em]">
+                                {getRoomRecordName(record)}
+                              </CardTitle>
+                              <CardDescription className="text-sm leading-6 text-muted-foreground">
+                                {record.address ?? `${record.district_name} · 주소 미입력`}
+                              </CardDescription>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge className="rounded-full" variant="secondary">
+                                월세 {formatCurrencyInManwon(record.monthly_rent)}
+                              </Badge>
+                              <Badge className="rounded-full" variant="outline">
+                                관리비 {formatCurrencyInManwon(record.maintenance_fee)}
+                              </Badge>
+                            </div>
                           </div>
                           <Badge
                             className={`rounded-full border ${locationStatus.className}`}
@@ -651,10 +742,23 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="rounded-[20px] border border-border/70 bg-white/45 p-4 text-sm leading-6 text-muted-foreground">
-                          <p>월세 {formatCurrencyInManwon(record.monthly_rent)}</p>
-                          <p>관리비 {formatCurrencyInManwon(record.maintenance_fee)}</p>
-                          <p>{locationStatus.detail}</p>
+                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.95fr)]">
+                          <div className="rounded-[20px] border border-border/70 bg-white/45 p-4">
+                            <p className="text-[0.72rem] uppercase tracking-[0.18em] text-muted-foreground">
+                              메모 요약
+                            </p>
+                            <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                              {getNotePreview(record.note)}
+                            </p>
+                          </div>
+                          <div className="rounded-[20px] border border-border/70 bg-white/45 p-4 text-sm leading-6 text-muted-foreground">
+                            <p className="text-[0.72rem] uppercase tracking-[0.18em] text-muted-foreground">
+                              위치 기준
+                            </p>
+                            <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                              {locationStatus.detail}
+                            </p>
+                          </div>
                         </div>
 
                         {insight.amenityMessage && insight.nearbyAmenities.length === 0 ? (
@@ -662,7 +766,7 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                             {insight.amenityMessage}
                           </div>
                         ) : (
-                          <div className="grid gap-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
                             {amenityRows.map((amenityRow) => {
                               const amenity = findAmenity(insight, amenityRow.kind);
 
@@ -673,16 +777,25 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                                 >
                                   <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div>
-                                      <p className="font-medium">{amenityRow.label}</p>
+                                      <p className="text-[0.72rem] uppercase tracking-[0.18em] text-muted-foreground">
+                                        {amenityRow.label}
+                                      </p>
                                       <p className="mt-1 text-sm leading-6 text-muted-foreground">
                                         {amenity?.placeName ?? "정보 없음"}
                                       </p>
                                     </div>
+                                  </div>
+                                  <div className="mt-3 flex flex-wrap gap-2">
                                     <Badge className="rounded-full" variant="secondary">
                                       {amenity
                                         ? formatWalkEstimate(amenity.walkMinutes)
                                         : "계산 불가"}
                                     </Badge>
+                                    {amenity ? (
+                                      <Badge className="rounded-full" variant="outline">
+                                        {formatAmenityDistance(amenity)}
+                                      </Badge>
+                                    ) : null}
                                   </div>
                                 </div>
                               );
@@ -699,7 +812,7 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                 })}
               </div>
 
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_320px]">
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_300px]">
                 <Card className={surfaceClassName}>
                   <CardHeader className="gap-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -837,7 +950,7 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                   </CardContent>
                 </Card>
 
-                <aside className="grid gap-4">
+                <aside className="grid gap-4 xl:sticky xl:top-6 xl:self-start">
                   <Card className={surfaceClassName}>
                     <CardHeader className="gap-3">
                       <Badge className="rounded-full" variant="outline">
@@ -849,8 +962,37 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
                       <p>총점 계산이나 자동 추천은 의도적으로 넣지 않았습니다.</p>
-                      <p>생활권 시간은 현재 직선거리 기준의 도보 추정값이고, 다음 단계에서 실제 보행 경로로 바꿀 수 있습니다.</p>
+                      <p>
+                        생활권 시간은 현재 직선거리 기준의 도보 추정값이고, 다음 단계에서
+                        실제 보행 경로로 바꿀 수 있습니다.
+                      </p>
                       <p>좌표가 없는 기록은 주소 기반 근사 좌표 또는 위치 보완 필요 상태로 표시합니다.</p>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Badge
+                          className={`rounded-full border ${statusClassName("good")}`}
+                          variant="outline"
+                        >
+                          좋음
+                        </Badge>
+                        <Badge
+                          className={`rounded-full border ${statusClassName("okay")}`}
+                          variant="outline"
+                        >
+                          보통
+                        </Badge>
+                        <Badge
+                          className={`rounded-full border ${statusClassName("bad")}`}
+                          variant="outline"
+                        >
+                          나쁨
+                        </Badge>
+                        <Badge
+                          className="rounded-full border border-border bg-background text-muted-foreground"
+                          variant="outline"
+                        >
+                          미입력
+                        </Badge>
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -866,42 +1008,10 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
                         >
                           <p className="font-medium">{getRoomRecordName(record)}</p>
                           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            {record.note ?? "남겨둔 메모가 아직 없습니다."}
+                            {getNotePreview(record.note, 180)}
                           </p>
                         </div>
                       ))}
-                    </CardContent>
-                  </Card>
-
-                  <Card className={surfaceClassName}>
-                    <CardHeader className="gap-3">
-                      <CardTitle className="font-serif text-2xl">상태 범례</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-wrap gap-2">
-                      <Badge
-                        className={`rounded-full border ${statusClassName("good")}`}
-                        variant="outline"
-                      >
-                        좋음
-                      </Badge>
-                      <Badge
-                        className={`rounded-full border ${statusClassName("okay")}`}
-                        variant="outline"
-                      >
-                        보통
-                      </Badge>
-                      <Badge
-                        className={`rounded-full border ${statusClassName("bad")}`}
-                        variant="outline"
-                      >
-                        나쁨
-                      </Badge>
-                      <Badge
-                        className="rounded-full border border-border bg-background text-muted-foreground"
-                        variant="outline"
-                      >
-                        미입력
-                      </Badge>
                     </CardContent>
                   </Card>
                 </aside>
